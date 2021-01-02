@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Будь еще продуктивней</title>
+        <script src="../media/chart.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/brain/0.6.3/brain.min.js"></script>
+        <script>
+            // provide optional config object (or undefined). Defaults shown.
+            // const config = {
+            //     binaryThresh: 0.5,
+            //     hiddenLayers: [5], // array of ints for the sizes of the hidden layers in the network
+            //     activation: 'sigmoid', // supported activation types: ['sigmoid', 'relu', 'leaky-relu', 'tanh'],
+            //     leakyReluAlpha: 0.01, // supported for activation type 'leaky-relu'
+            // };
+            
+            // // create a simple feed forward neural network with backpropagation
+            // const net = new brain.NeuralNetwork(config);
+
+            function getCoefficient(keys, workTime, freeTime ) {
+                if (freeTime == 0) freeTime = 100;
+                return workTime/keys - 1/freeTime;
+            }
+            // console.log(getCoefficient(5000, 3600, 0));
+            
+            // net.train([
+            //     { input: getCoefficient(5000, 3600, 0), output: [2400] },
+            //     { input: getCoefficient(5000, 3600, 240), output: [1800] },
+            //     { input: getCoefficient(3000, 3600, 120), output: [1800] },
+            //     { input: getCoefficient(2000, 3600, 0), output: [1800] },
+            //     { input: getCoefficient(2500, 1800, 0), output: [900] },
+            // ]);
+            
+            // const output = net.run([5000, 3600, 240]);
+            // console.log(output);
+
+            const net = new brain.NeuralNetwork({
+                hiddenLayers: [10],
+                iterations: 20000
+            });
+
+            net.train([
+                { input: [1/5000, 1/3600, 0 ], output: [1/2400] },
+                { input: [1/5000, 1/3600, 1/240 ], output: [1/1800] },
+                { input: [1/3000, 1/3600, 1/120 ], output: [1/1800] },
+                { input: [1/6000, 1/7200, 1/120 ], output: [1/3600] },
+            ]);
+
+            const output = net.run( [1/3000, 1/7200, 1/120 ] ); // { white: 0.99, black: 0.002 }
+            console.log(1/output);
+        </script>
+
+        <style>
+            ol{
+                list-style: none;
+                padding: 10px;
+            }
+            button {
+                background: rgb(74, 74, 74);
+                border: none;
+                padding: 7px;
+                margin: 5px;
+                border-radius: 5px;
+            }
+            button:hover {
+                transform: scale(1.02, 1.02);
+            }
+            #filesListContainer ul{
+                display: flex;
+                justify-content: space-evenly ;
+            }
+                
+            #tabs{
+                width: 100%;
+                height: max-content;
+                margin-bottom: 10px;
+            }
+            #tabs span {
+                padding: 7px;
+                border-radius: 0 0 5px 5px;
+                background: rgb(74, 74, 74);
+                border: none;
+                transition: all .05s ease-in-out;
+                cursor: pointer;
+            }
+            #tabs span:hover {
+                padding: 8px;
+                padding-top: 7px;
+                background: rgb(76, 76, 76);
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Статистика продуктивности</h1>
+
+        <div class="info">
+            <h2>Общая статистика за месяц</h2>
+            <div class="info-text">
+                Вы работали <span id="info-work-time"></span>. <br>
+                Сделали <span id="info-key-count"></span> нажатий. <br>
+                Отдыхали <span id="info-free-time"></span>. <br>
+                Ваш любимый язык в этом месяце - <span id="info-language"></span>.
+            </div>
+        </div>
+
+        <h2>${currentFile}</h2>
+
+        <hr>
+        <h3>Выберите график: </h3>
+        <div id="tabs">
+            <span id="time">Время</span>
+            <span id="key">Кол-во клавиш</span>
+            <span id="cash">Заработок</span>
+        </div>
+
+        <canvas id="key-chart"></canvas>
+
+        <p>
+            <h2>Выберите файл: </h2>
+            <div id="filesListContainer"></div>
+        </p>
+        <script>
+            "use strict";
+            let filesData = {
+                "machicoro.com":{
+                    "server.php":{
+                        "12/25/2020":{
+                            "workTime":45593,
+                            "freeTime":10,
+                            "date":0,
+                            "keyCount":0,
+                            "language":"php",
+                            "timestamp":"160889979065"
+                        },
+                        "12/28/2020":{
+                            "workTime": 860,
+                            "freeTime": 0,
+                            "date":0,
+                            "keyCount":0,
+                            "language":"php",
+                            "timestamp":"160889979065"
+                        },
+                        "12/29/2020":{
+                            "workTime": 0,
+                            "freeTime": 0,
+                            "date":0,
+                            "keyCount":0,
+                            "language":"php",
+                            "timestamp":"160889979065"
+                        },
+                        "12/30/2020":{
+                            "workTime": 6509,
+                            "freeTime": 0,
+                            "date":0,
+                            "keyCount":0,
+                            "language":"php",
+                            "timestamp":"160889979065"
+                        },
+                        "1/1/2021":{
+                            "workTime": 1240,
+                            "freeTime":0,
+                            "date":0,
+                            "keyCount":0,
+                            "language":"php",
+                            "timestamp":"160889973123"
+                        },
+                        "1/2/2021":{
+                            "workTime": 0,
+                            "freeTime":2340,
+                            "date":0,
+                            "keyCount":0,
+                            "language":"php",
+                            "timestamp":"1608899734358"
+                        },
+                        "1/5/2021":{
+                            "workTime":5543,
+                            "freeTime":0,
+                            "date":0,
+                            "keyCount":0,
+                            "language":"php",
+                            "timestamp":"1608899733094"
+                        }
+                    },
+                    "machicorOnline.html":{
+                        "12/25/2020":{
+                            "workTime":43,
+                            "freeTime":0,
+                            "date":0,
+                            "keyCount":0,
+                            "language":"html",
+                            "timestamp":1608899736179
+                        },
+                        "12/26/2020":{
+                            "workTime": 0,
+                            "freeTime":0,
+                            "date":0,
+                            "keyCount":0,
+                            "language":"html",
+                            "timestamp":1608899736179
+                        },
+                        "12/27/2020":{
+                            "workTime": 1200,
+                            "freeTime":0,
+                            "date":0,
+                            "keyCount":0,
+                            "language":"html",
+                            "timestamp":1608899736179
+                        }
+                    }
+                },
+                "tableApp":{
+                    "table.jsx":{
+                        "12/25/2020":{
+                            "workTime":4593,
+                            "freeTime":10,
+                            "date":0,
+                            "keyCount":0,
+                            "language":"jsx",
+                            "timestamp":"160889979065"
+                        },
+                        "12/26/2020":{
+                            "workTime":4490,
+                            "freeTime":100,
+                            "date":0,
+                            "keyCount":0,
+                            "language":"jsx",
+                            "timestamp":"160889979065"
+                        },
+                        "12/27/2020":{
+                            "workTime":4593,
+                            "freeTime": 54,
+                            "date":0,
+                            "keyCount":0,
+                            "language":"jsx",
+                            "timestamp":"160889979065"
+                        },
+                        "12/28/2020":{
+                            "workTime": 860,
+                            "freeTime": 0,
+                            "date":0,
+                            "keyCount":0,
+                            "language":"jsx",
+                            "timestamp":"160889979065"
+                        },
+                        "12/29/2020":{
+                            "workTime": 0,
+                            "freeTime": 0,
+                            "date":0,
+                            "keyCount":0,
+                            "language":"jsx",
+                            "timestamp":"160889979065"
+                        },
+                        "12/30/2020":{
+                            "workTime": 6509,
+                            "freeTime": 0,
+                            "date":0,
+                            "keyCount":0,
+                            "language":"jsx",
+                            "timestamp":"160889979065"
+                        },
+                        "12/31/2020":{
+                            "workTime": 1240,
+                            "freeTime":0,
+                            "date":0,
+                            "keyCount":0,
+                            "language":"jsx",
+                            "timestamp":"160889973123"
+                        },
+                        "01/01/2021":{
+                            "workTime": 0,
+                            "freeTime":2340,
+                            "date":0,
+                            "keyCount":0,
+                            "language":"jsx",
+                            "timestamp":"1608899734358"
+                        },
+                        "02/01/2021":{
+                            "workTime":5543,
+                            "freeTime":0,
+                            "date":0,
+                            "keyCount":0,
+                            "language":"jsx",
+                            "timestamp":"1608899733094"
+                        }
+                    },
+                    "index.jsx":{
+                        "12/25/2020":{
+                            "workTime":43,
+                            "freeTime":0,
+                            "date":0,
+                            "keyCount":0,
+                            "language":"html",
+                            "timestamp":1608899736179
+                        },
+                        "12/26/2020":{
+                            "workTime": 0,
+                            "freeTime":0,
+                            "date":0,
+                            "keyCount":0,
+                            "language":"html",
+                            "timestamp":1608899736179
+                        },
+                        "12/27/2020":{
+                            "workTime": 1200,
+                            "freeTime":0,
+                            "date":0,
+                            "keyCount":0,
+                            "language":"html",
+                            "timestamp":1608899736179
+                        }
+                    }
+                }
+            };
+
+            let viewData = {}; // data for chart
+            let labelsData = []; // data for labels of chart
+
+            getFileData("machicoro.com", "server.php");
+
+            function getCurrentDate (date = new Date()) {
+                let options = {
+                    year: "numeric",
+                    month: "numeric",
+                    day: "numeric",
+                    timezone: "UTC"
+                };
+
+                return date.toLocaleDateString("en", options);
+            }
+            
+            function getFileData (project, filename) {
+                viewData = {
+                    workTime: [],
+                    freeTime: [],
+                    totalTime: [],
+                    keyCount: [],
+                    cash: []
+                };
+
+                // pull chart data
+                for (let day = 0; day < 30; day++) {
+                    // get current date as string
+                    let date_str = new Date(getCurrentDate());
+                    // get dates for month as string
+                    let date = getCurrentDate(new Date(date_str.setDate(date_str.getDate() - day)));
+
+                    let currentFile = filesData[project][filename][date];
+
+                    // data is not defined - set empty data
+                    if (!currentFile) {
+                        viewData['workTime'].push(0);
+                        viewData['freeTime'].push(0);
+                        viewData['totalTime'].push(0);
+                        viewData['keyCount'].push(0);
+                        viewData['cash'].push(0);
+                    } else {
+                        viewData['workTime'].push(currentFile.workTime);
+                        viewData['freeTime'].push(currentFile.freeTime);
+                        viewData['totalTime'].push(currentFile.freeTime + currentFile.workTime);
+                        viewData['keyCount'].push(currentFile.keyCount);
+
+                        let cash = 0;
+                        // let work_free_ratio = 0;
+
+                        // if (day.workTime > day.freeTime) {
+                        //     let freeTime = day.freeTime > 0 ? day.freeTime : 0;
+                            
+                        //     work_free_ratio = 
+                        // }
+                        viewData['cash'].push(cash);
+                    }
+
+                    labelsData.push(date);
+                }
+            }
+
+            let ctx = document.getElementById('key-chart').getContext('2d');
+            // crerate chart
+            let statistics = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labelsData, // date
+                    datasets: [
+                        {
+                            label: 'Work time',
+                            backgroundColor: 'rgb(255, 99, 132)',
+                            borderColor: 'rgb(255, 99, 132)',
+                            fill: false,
+                            data: viewData['workTime']
+                        },
+                        {
+                            label: 'Free time',
+                            backgroundColor: 'rgb(0, 0, 0)',
+                            borderColor: 'rgb(0, 0, 0)',
+                            fill: false,
+                            data: viewData['freeTime']
+                        },
+                        {
+                            label: 'Total time',
+                            fill: true,
+                            data: viewData['totalTime']
+                        },
+                    ]
+                },
+                options: {
+                    hover: {
+                        // Overrides the global setting
+                        mode: 'index'
+                    },
+                    legend: {
+                        display: true
+                    },
+                    scales: {
+                        xAxes: [ {
+                            type: "time",
+                            time: {
+                                unit: 'month'
+                            },
+                            display: true,
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Days (1 - 30)'
+                            }
+                        } ],
+                        yAxes: [ {
+                            display: true,
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Work time - sec'
+                            }
+                        } ]
+                    }
+                }
+            });
+
+            let filesContainer = document.getElementById('filesListContainer');
+            // pull files for create tree list in html
+            let files = {}
+            Object.keys(filesData).forEach (project => {
+                files[project] =  Object.keys(filesData[project]).map(file => {
+                    return file;
+                });
+            });
+            filesContainer.appendChild(objToHtmlList(files));
+
+            function objToHtmlList(obj, projectName = "utitled") {
+                if (obj instanceof Array) {
+                    let ol = document.createElement('ol');
+                    for (let child in obj) {
+                        let li = document.createElement('li');
+                        
+                        // button for open file
+                        let btn = document.createElement("BUTTON");
+                        btn.onclick = () => {
+                            openFileData(projectName, obj[child]);
+                        }
+                        btn.appendChild(objToHtmlList(obj[child]));
+                        li.appendChild(btn);
+                        ol.appendChild(li);
+                    }
+                    return ol;
+                }
+                else if (obj instanceof Object && !(obj instanceof String)) {
+                    let ul = document.createElement('ul');
+                    for (let child in obj) {
+                        let li = document.createElement('li');
+                        li.appendChild(document.createTextNode(child + ": "));
+                        li.appendChild(objToHtmlList(obj[child], child));
+                        ul.appendChild(li);
+                    }
+                    return ul;
+                }
+                else {
+                    return document.createTextNode(obj);
+                }
+            }
+
+            function openFileData (project, fileName, type = "time") {
+                getFileData(project, fileName);
+                if (type == "time"){
+                    statistics.data.datasets = [
+                        {
+                            label: 'Work time',
+                            backgroundColor: 'rgb(255, 99, 132)',
+                            borderColor: 'rgb(255, 99, 132)',
+                            fill: false,
+                            data: viewData['workTime']
+                        },
+                        {
+                            label: 'Free time',
+                            backgroundColor: 'rgb(0, 0, 0)',
+                            borderColor: 'rgb(0, 0, 0)',
+                            fill: false,
+                            data: viewData['freeTime']
+                        },
+                        {
+                            label: 'Total time',
+                            fill: true,
+                            data: viewData['totalTime']
+                        },
+                    ];
+                } else if (type == "key") {
+                    statistics.data.datasets = [
+                        {
+                            label: 'Количество нажатых клавиш',
+                            borderColor: '#42c775',
+                            fill: false,
+                            data: viewData['keyCount']
+                        }
+                    ];
+                } else if (type == "cash") {
+                    statistics.data.datasets = [
+                        {
+                            label: 'Ваша заработок',
+                            borderColor: '#e6e861',
+                            fill: false,
+                            data: viewData['cash']
+                        }
+                    ];
+                }
+
+                statistics.update();
+            }
+
+
+            // html work
+            print_tabs();
+            function print_tabs() {
+                let tabs = document.querySelectorAll('#tabs span');
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        openFileData("machicoro.com", "server.php", tab.id)
+                    });
+                });
+            }
+
+
+            print_totalStatistics();
+            function print_totalStatistics() {
+                let info_work_time = 0;
+                let info_key_count = 0;
+                let info_free_time = 0;
+                let languages = {},
+                    info_language = 'Русский;)';
+
+                for (let project of Object.values(filesData)) {
+                    if (project[""]) {
+                        project[""] = undefined;
+                    }else{
+                        for (let file of Object.values(project)) {
+                            for (let day of Object.values(file)) {
+                                info_work_time += day.workTime;
+                                info_key_count += day.keyCount;
+                                info_free_time += day.freeTime;
+    
+                                if (!languages[day.language]) {
+                                    languages[day.language] = 0;
+                                }
+                                languages[day.language] += day.workTime;
+                            }
+                        }
+                    }
+                    let bigest;
+                    for ( let lang in languages ) {
+                        if (!bigest) bigest = lang;
+                        else if (languages[bigest] < languages[lang])
+                            bigest = lang;
+                    }
+                    info_language = bigest;
+    
+                    document.querySelector('#info-work-time').innerHTML = Math.floor(info_work_time/60) + ' мин';
+                    document.querySelector('#info-key-count').innerHTML = info_key_count;
+                    document.querySelector('#info-free-time').innerHTML = Math.floor(info_free_time/60) + ' мин';
+                    document.querySelector('#info-language').innerHTML = info_language;
+                }
+            }
+        </script>
+    </body>
+</html>
