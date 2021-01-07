@@ -7,48 +7,121 @@
         <script src="../media/chart.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/brain/0.6.3/brain.min.js"></script>
         <script>
-            // provide optional config object (or undefined). Defaults shown.
             // const config = {
-            //     binaryThresh: 0.5,
-            //     hiddenLayers: [5], // array of ints for the sizes of the hidden layers in the network
+            //     iterations: 20000,
+            //     hiddenLayers: [20], // array of ints for the sizes of the hidden layers in the network
             //     activation: 'sigmoid', // supported activation types: ['sigmoid', 'relu', 'leaky-relu', 'tanh'],
-            //     leakyReluAlpha: 0.01, // supported for activation type 'leaky-relu'
+            //     // leakyReluAlpha: 0.01, // supported for activation type 'leaky-relu'
             // };
-            
-            // // create a simple feed forward neural network with backpropagation
             // const net = new brain.NeuralNetwork(config);
 
-            function getCoefficient(keys, workTime, freeTime ) {
-                if (freeTime == 0) freeTime = 100;
-                return workTime/keys - 1/freeTime;
-            }
-            // console.log(getCoefficient(5000, 3600, 0));
+            // // наибольшй общий делитель
+            // function NOD (arr) {
+            //     let x = arguments[0];
+            //     for (i = 1; i < arguments.length; i++) {
+            //         let y = arguments[i];
+            //         while (x && y) {
+            //             x > y ? x %= y : y %= x;
+            //         }
+            //         x += y;
+            //     }
+            //     return x;
+            // }
+
+            // // сокращает массив чисел [10, 5] => [2, 1]
+            // function reduction(data) {
+            //     let reduced = []
+            //     Object.keys(data).forEach(item => {
+            //         reduced[item] = data[item] / NODs[item];
+            //     });
+            //     return reduced;
+            // }
+
+            // // оригинальные данные с полными значениями
+            // let originData = {
+            //     k    : [6000, 6000, 6000, 3000, 3000, 3000, 8000, 8000, 8000, 1000,   3000, 3000, 3000, 1500, 1500, 1500, 4000, 4000, 4000, 1000,   3000, 2002, ],
+            //     w    : [7200, 7200, 7200, 7200, 7200, 7200, 7200, 7200, 7200, 7200,   3600, 3600, 3600, 3600, 3600, 3600, 3600, 3600, 3600, 3600,   3000, 2465, ],
+            //     f    : [1   , 420 , 240 , 1   , 420 , 240 , 1   , 420 , 240 , 1   ,   1   , 420 , 240 , 1   , 420 , 240 , 1   , 420 , 240 , 1   ,   500 , 1   , ],
+            //     cash : [3600, 3500, 3550, 3400, 3300, 3350, 3700, 3600, 3650, 1800,   1800, 1700, 1750, 1700, 1600, 1650, 1900, 1800, 1850, 900 ,   1500, 1176, ]
+            // };
+
+            // // объект с наибольшими общими делителями для всех ключей
+            // let NODs = {};
             
-            // net.train([
-            //     { input: getCoefficient(5000, 3600, 0), output: [2400] },
-            //     { input: getCoefficient(5000, 3600, 240), output: [1800] },
-            //     { input: getCoefficient(3000, 3600, 120), output: [1800] },
-            //     { input: getCoefficient(2000, 3600, 0), output: [1800] },
-            //     { input: getCoefficient(2500, 1800, 0), output: [900] },
-            // ]);
-            
-            // const output = net.run([5000, 3600, 240]);
+            // // перебираем начальные данные
+            // Object.keys(originData).forEach(item => {
+            //     let nod = NOD(...originData[item]); // находим для типа данных НОД
+            //     NODs[item] = nod; // сохраняем его
+            //     originData[item] = originData[item].map(val => val/nod); // сокращаем начальные данные
+            // });
+
+            // // получаем данные для тренировки
+            // let trainData = [];
+            // // перебираем все данные
+            // for (let i = 0; i < originData['w'].length; i++) {
+            //     // записываем данные для тренировки как 1 / value
+            //     trainData.push({
+            //         input: [
+            //             1 / originData['k'][i], // key count 
+            //             1 / originData['w'][i], 
+            //             originData['f'][i] == 0 
+            //                 ? 0
+            //                 : (1 / originData['f'][i])
+            //         ],
+            //         output: [1 / originData['cash'][i]]
+            //     })
+            // }
+
+            // net.train(trainData, 
+            // {
+            //     log: true,
+            //     iterations: 50000,
+            //     logPeriod: 1000,
+            //     errorThresh: 0.0000000000000001,
+            //     learningRate: 0.6
+            // }
+            // );
+
+            // let inputData = {k: 6000, w: 7200, f: 420};
+            // let reduced = Object.values(reduction(inputData));
+           
+            // reduced = reduced.map(item => 1/item);
+
+            // const output = net.run(reduced);
+
+            // console.log(trainData[0]);
+            // console.log(reduced);
             // console.log(output);
 
-            const net = new brain.NeuralNetwork({
-                hiddenLayers: [10],
-                iterations: 20000
-            });
+            // console.log('originData: ', originData);
+            // console.log('trainData: ', trainData);
+            // console.log('input data: ', inputData);
+            // console.log('reduced: ', reduction(inputData));
+            // console.log('1 / reduced: ',reduced);
+            // console.log('output: ', output);
+            // console.log('NODs: ', NODs);
+            // console.log('Cash', 1 / output * NODs['cash']);
 
-            net.train([
-                { input: [1/5000, 1/3600, 0 ], output: [1/2400] },
-                { input: [1/5000, 1/3600, 1/240 ], output: [1/1800] },
-                { input: [1/3000, 1/3600, 1/120 ], output: [1/1800] },
-                { input: [1/6000, 1/7200, 1/120 ], output: [1/3600] },
-            ]);
+            // net.train([{
+            //     input: [1 / 5000, 1 / 3600, 0],
+            //     output: [1 / 2400]
+            // },
+            // {
+            //     input: [1 / 5000, 1 / 3600, 1 / 240],
+            //     output: [1 / 1800]
+            // },
+            // {
+            //     input: [1 / 3000, 1 / 3600, 1 / 120],
+            //     output: [1 / 1800]
+            // },
+            // {
+            //     input: [1 / 6000, 1 / 7200, 1 / 120],
+            //     output: [1 / 3600]
+            // },
+            // ]);
 
-            const output = net.run( [1/3000, 1/7200, 1/120 ] ); // { white: 0.99, black: 0.002 }
-            console.log(1/output);
+
+            
         </script>
 
         <style>
@@ -330,50 +403,62 @@
             }
             
             function getFileData (project, filename) {
-                viewData = {
-                    workTime: [],
-                    freeTime: [],
-                    totalTime: [],
-                    keyCount: [],
-                    cash: []
-                };
+					labelsData = [];
+					viewData = {
+						workTime: [],
+						freeTime: [],
+						totalTime: [],
+						keyCount: [],
+						cash: []
+					};
+	
+					// pull chart data
+					for (let day = 0; day < 30; day++) {
+						// get current date as string
+						let date_str = new Date(getCurrentDate());
+						// get dates for month as string
+						let date = getCurrentDate(new Date(date_str.setDate(date_str.getDate() - day)));
+	
+						let currentFile = filesData[project][filename][date];
+	
+						// data is not defined - set empty data
+						if (!currentFile) {
+							viewData['workTime'].push(0);
+							viewData['freeTime'].push(0);
+							viewData['totalTime'].push(0);
+							viewData['keyCount'].push(0);
+							viewData['cash'].push(0);
+						} else {
+							// work data
+							let work_time  = currentFile.workTime,
+								free_time  = currentFile.freeTime,
+								total_time = work_time + free_time,
+								key_count  = currentFile.keyCount,
+								cash       = 0;
 
-                // pull chart data
-                for (let day = 0; day < 30; day++) {
-                    // get current date as string
-                    let date_str = new Date(getCurrentDate());
-                    // get dates for month as string
-                    let date = getCurrentDate(new Date(date_str.setDate(date_str.getDate() - day)));
+							// coefficients, data for get cash value
+							let c_work = 2.11,
+								c_key  = 1.22,
+								c_free = 4.8;
 
-                    let currentFile = filesData[project][filename][date];
+							// for a more accurate result
+							if (work_time > 360) {
+								cash = ( work_time / c_work ) + ( (key_count * 100 * c_key) / work_time ) - ( free_time / c_free );
+							} else {
+								cash = 'Невозможно посчитать';
+							}
 
-                    // data is not defined - set empty data
-                    if (!currentFile) {
-                        viewData['workTime'].push(0);
-                        viewData['freeTime'].push(0);
-                        viewData['totalTime'].push(0);
-                        viewData['keyCount'].push(0);
-                        viewData['cash'].push(0);
-                    } else {
-                        viewData['workTime'].push(currentFile.workTime);
-                        viewData['freeTime'].push(currentFile.freeTime);
-                        viewData['totalTime'].push(currentFile.freeTime + currentFile.workTime);
-                        viewData['keyCount'].push(currentFile.keyCount);
+							viewData['workTime'].push(work_time);
+							viewData['freeTime'].push(free_time);
+							viewData['totalTime'].push(total_time);
+							viewData['keyCount'].push(key_count);
+							viewData['cash'].push(cash);
+						}
 
-                        let cash = 0;
-                        // let work_free_ratio = 0;
-
-                        // if (day.workTime > day.freeTime) {
-                        //     let freeTime = day.freeTime > 0 ? day.freeTime : 0;
-                            
-                        //     work_free_ratio = 
-                        // }
-                        viewData['cash'].push(cash);
-                    }
-
-                    labelsData.push(date);
-                }
-            }
+						// add date to labels
+						labelsData.push(date);
+					}
+				}
 
             let ctx = document.getElementById('key-chart').getContext('2d');
             // crerate chart

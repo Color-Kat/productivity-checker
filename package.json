@@ -3,10 +3,10 @@
 	"publisher": "ColorKat",
 	"displayName": "Productivity checker",
 	"description": "",
-	"icon" : "images/logo.png",
+	"icon": "images/logo.png",
 	"repository": {
-		"type" : "git",
-  		"url" : "https://github.com/Color-Kat/productivity-checker.git"
+		"type": "git",
+		"url": "https://github.com/Color-Kat/productivity-checker.git"
 	},
 	"version": "1.0.1",
 	"engines": {

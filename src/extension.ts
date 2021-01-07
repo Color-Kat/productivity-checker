@@ -330,7 +330,6 @@ function updateStatusBar () {
 	statusBarItem.tooltip = `Время работы с файлом ${getCurrentFile()}`; // change file name in desc
 	statusBarItem.show();
 }
-
 function setupWebview (
 	context: vscode.ExtensionContext,
 	panel: vscode.WebviewPanel,
@@ -498,19 +497,29 @@ function setupWebview (
 							viewData['keyCount'].push(0);
 							viewData['cash'].push(0);
 						} else {
-							viewData['workTime'].push(currentFile.workTime);
-							viewData['freeTime'].push(currentFile.freeTime);
-							viewData['totalTime'].push(currentFile.freeTime + currentFile.workTime);
-							viewData['keyCount'].push(currentFile.keyCount);
-	
-							let cash = 0;
-							// let work_free_ratio = 0;
-	
-							// if (day.workTime > day.freeTime) {
-							//     let freeTime = day.freeTime > 0 ? day.freeTime : 0;
-								
-							//     work_free_ratio = 
-							// }
+							// work data
+							let work_time  = currentFile.workTime,
+								free_time  = currentFile.freeTime,
+								total_time = work_time + free_time,
+								key_count  = currentFile.keyCount,
+								cash       = 0;
+
+							// coefficients, data for get cash value
+							let c_work = 2.11,
+								c_key  = 1.22,
+								c_free = 4.8;
+
+							// for a more accurate result
+							if (work_time > 360) {
+								cash = ( work_time / c_work ) + ( (key_count * 100 * c_key) / work_time ) - ( free_time / c_free );
+							} else {
+								cash = 'Невозможно посчитать';
+							}
+
+							viewData['workTime'].push(work_time);
+							viewData['freeTime'].push(free_time);
+							viewData['totalTime'].push(total_time);
+							viewData['keyCount'].push(key_count);
 							viewData['cash'].push(cash);
 						}
 
