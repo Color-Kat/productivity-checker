@@ -125,6 +125,9 @@
         </script>
 
         <style>
+            body, html{
+                padding: 0 100px;
+            }
             ol{
                 list-style: none;
                 padding: 10px;
@@ -162,6 +165,12 @@
                 padding-top: 7px;
                 background: rgb(76, 76, 76);
             }
+
+            .chart-wrapper {
+                width: 100%;
+                display: flex;
+                justify-content: center;
+            }
         </style>
     </head>
     <body>
@@ -186,15 +195,17 @@
             <span id="key">Кол-во клавиш</span>
             <span id="cash">Заработок</span>
         </div>
-
-        <canvas id="key-chart"></canvas>
+        <div class="chart-wrapper">
+            <div class="chart-container" style="position: relative; height:40vh; width:80vw"></div>
+                <canvas id="key-chart"></canvas>
+            </div>
+        </div>
 
         <p>
             <h2>Выберите файл: </h2>
             <div id="filesListContainer"></div>
         </p>
         <script>
-            "use strict";
             let filesData = {
                 "machicoro.com":{
                     "server.php":{
@@ -388,6 +399,10 @@
 
             let viewData = {}; // data for chart
             let labelsData = []; // data for labels of chart
+             // coefficients, data for get cash value
+             let c_work = 2.11,
+                c_key  = 5,
+                c_free = 4.8;
 
             getFileData("machicoro.com", "server.php");
 
@@ -402,6 +417,8 @@
                 return date.toLocaleDateString("en", options);
             }
             
+           
+
             function getFileData (project, filename) {
 					labelsData = [];
 					viewData = {
@@ -436,11 +453,6 @@
 								key_count  = currentFile.keyCount,
 								cash       = 0;
 
-							// coefficients, data for get cash value
-							let c_work = 2.11,
-								c_key  = 1.22,
-								c_free = 4.8;
-
 							// for a more accurate result
 							if (work_time > 360) {
 								cash = ( work_time / c_work ) + ( (key_count * 100 * c_key) / work_time ) - ( free_time / c_free );
@@ -452,8 +464,16 @@
 							viewData['freeTime'].push(free_time);
 							viewData['totalTime'].push(total_time);
 							viewData['keyCount'].push(key_count);
-							viewData['cash'].push(cash);
-						}
+                            viewData['cash'].push(cash);
+                            
+                            work_time  = 3600;
+                            free_time  = 0;
+                            key_count  = 1500;
+                            cash       = 0;
+                            console.log(( work_time / c_work ) + ( (key_count * 100 * c_key) / work_time ) - ( free_time / c_free ));
+                        }
+                        
+                       
 
 						// add date to labels
 						labelsData.push(date);
@@ -489,6 +509,7 @@
                     ]
                 },
                 options: {
+                    aspectRatio: 2.4,
                     hover: {
                         // Overrides the global setting
                         mode: 'index'

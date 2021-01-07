@@ -349,6 +349,17 @@ function setupWebview (
 			</script>
 
 			<style>
+				body, html{
+					padding: 0 100px;
+				}
+				@media screen and (max-width: 1300px) {
+					body, html {
+						padding: 0 15px;
+					}
+					.info {
+						padding: 0 20px !important;
+					}
+				}
 				ol{
 					list-style: none;
 					padding: 10px;
@@ -425,7 +436,8 @@ function setupWebview (
 					Вы работали <b><span id="info-work-time"></span></b>. <br>
 					Сделали <b><span id="info-key-count"></span></b> нажатий. <br>
 					Отдыхали <b><span id="info-free-time"></span></b>. <br>
-					Ваш любимый язык в этом месяце - <b><span id="info-language"></span></b>.
+					Ваш любимый язык в этом месяце - <b><span id="info-language"></span></b>. <br>
+					И ваша зарплата в этом месяце - <b><span id="info-salary"></span></b>.
 				</div>
 			</div>
 
@@ -470,6 +482,11 @@ function setupWebview (
 					return date.toLocaleDateString("en", options);
 				}
 				
+				// coefficients, data for get cash value
+				let c_work = 2.11,
+					c_key  = 5,
+					c_free = 4.8;
+					
 				function getFileData (project, filename) {
 					labelsData = [];
 					viewData = {
@@ -504,23 +521,25 @@ function setupWebview (
 								key_count  = currentFile.keyCount,
 								cash       = 0;
 
-							// coefficients, data for get cash value
-							let c_work = 2.11,
-								c_key  = 1.22,
-								c_free = 4.8;
-
 							// for a more accurate result
+							console.log(work_time);
 							if (work_time > 360) {
-								cash = ( work_time / c_work ) + ( (key_count * 100 * c_key) / work_time ) - ( free_time / c_free );
+								cash = Math.round(( work_time / c_work ) + ( (key_count * 100 * c_key) / work_time ) - ( free_time / c_free ));
 							} else {
-								cash = 'Невозможно посчитать';
+								cash = 0;
 							}
+
+							currentFile.cash = cash;
 
 							viewData['workTime'].push(work_time);
 							viewData['freeTime'].push(free_time);
 							viewData['totalTime'].push(total_time);
 							viewData['keyCount'].push(key_count);
 							viewData['cash'].push(cash);
+
+							console.log(filesData[project][filename][date]);
+							filesData[project][filename][date] = currentFile;
+							console.log(filesData[project][filename][date]);
 						}
 
 						// add date to labels
@@ -562,6 +581,7 @@ function setupWebview (
 						]
 					},
 					options: {
+						aspectRatio: 2.4,
 						hover: {
 							// Overrides the global setting
 							mode: 'index'
@@ -715,18 +735,39 @@ function setupWebview (
 
 				print_totalStatistics();
 				function print_totalStatistics() {
-					let info_work_time = 0;
-					let info_key_count = 0;
-					let info_free_time = 0;
+					let info_work_time = 0,
+					    info_key_count = 0,
+						info_free_time = 0;
+						info_salary    = 0;
 					let languages = {},
 						info_language = 'Русский;)';
-	
+					console.log(viewData);
+					console.log(Object.values(filesData));
 					for (let project of Object.values(filesData)) {
 						for (let file of Object.values(project)) {
 							for (let day of Object.values(file)) {
+								
+
+
+
+								// work data
+								let work_time  = day.workTime,
+									free_time  = day.freeTime,
+									key_count  = day.keyCount,
+									cash       = 0;
+
+								// for a more accurate result
+								if (work_time > 360) {
+									cash = Math.round(( work_time / c_work ) + ( (key_count * 100 * c_key) / work_time ) - ( free_time / c_free ));
+								} else {
+									cash = 0;
+								}
+
 								info_work_time += day.workTime;
-								info_key_count += day.keyCount;
-								info_free_time += day.freeTime;
+								info_key_count += key_count;
+								info_free_time += free_time;
+								info_salary    += cash;
+
 	
 								if (!languages[day.language]) {
 									languages[day.language] = 0;
@@ -747,7 +788,8 @@ function setupWebview (
 					document.querySelector('#info-work-time').innerHTML = Math.floor(info_work_time/60) + ' мин';
 					document.querySelector('#info-key-count').innerHTML = info_key_count;
 					document.querySelector('#info-free-time').innerHTML = Math.floor(info_free_time/60) + ' мин';
-					document.querySelector('#info-language').innerHTML = info_language;
+					document.querySelector('#info-language').innerHTML  = info_language;
+					document.querySelector('#info-salary').innerHTML    = info_salary + 'руб';
 				}
 			</script>
 		</body>
