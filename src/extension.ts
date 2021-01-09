@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import * as path from "path";
+import { Uri } from "vscode";
 // import * as util from "util";
 // import * as inspector from "inspector";
 // import { strict } from "assert";
@@ -134,6 +135,7 @@ function fillFiledates () {
 }
 
 export async function activate (context: vscode.ExtensionContext) {
+	// vscode.workspace.fs.readFile(Uri.file(path.join(context.extensionPath, "chartTest.html")));
 	let disposable = vscode.commands.registerCommand(
 		"productivity-checker.productivity-check",
 		async () => {
@@ -383,6 +385,7 @@ function setupWebview (
 	currentProject: string,
 	currentFile: string
 ) {
+	// return
 	return `<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -398,6 +401,7 @@ function setupWebview (
 			<style>
 				body, html{
 					padding: 0 100px;
+					oveflow-x: hidden;
 				}
 				@media screen and (max-width: 1300px) {
 					body, html {
@@ -485,7 +489,7 @@ function setupWebview (
 				#settingsWindow{
 					position: fixed;
 					opacity: 0;
-					transition: all 1s ease-in-out; 
+					transition: all .5s ease-in-out; 
 					top: 0;
 					left: 0;
 					width: 100%;
@@ -504,17 +508,45 @@ function setupWebview (
 				#settingsWindow .settingsWindow-wrapper{
 					width: 100%;
 					margin: 0 100px;
+					margin-top: 20px;
 				}
 				#settingsWindow .settingsWindow-wrapper * {
 					width: 100%;
+					font-size: 1.1em
 				}
 				#settingsWindow .settingsWindow-wrapper h1 {
 					display: flex;
 					justify-content: center;
+					font-size: 1.45em
 				}
-				#settingsWindow .settingsWindow-wrapper input {
-					width: 150px;
+				#settingsWindow .settingsWindow-wrapper #hSalary {
+					width: 100px;
+					background: #4a4a4a;
+					border-radius: 15px
+					color: white
+					border: none;
+					outline: none;
+					padding: 5px;
 				}
+				.settingTitle{
+					font-size: 1.23em;
+					font-weight: bold;
+				}
+
+				#settingsWindow #settingsClose{
+					position: absolute;
+					right: 0;
+					transform: rotate(45deg);
+					z-index: 1001;
+				}
+
+				#settingsWindow .settingsWindow-wrapper input[type="radio"] {
+					width: 50px;
+					margin-left: 25px;
+				}
+
+
+
 			</style>
 		</head>
 		<body>
@@ -522,15 +554,31 @@ function setupWebview (
 
 			<div id="settingsWindow">
 				<div class="settingsWindow-wrapper">
+					<span id="settingsClose">+</span>
+
 					<h1>Настройки productivity-trecker</h1>
 
 					<p>
-						<span>Сколько вы берете за час своей работы?</span>
-						<input type="number" id="hSalary" data-obj="cWork">
+						<span class="settingTitle">Сколько вы берете за час своей работы?</span>
+						<input min="0" max="10000" type="number" id="hSalary" data-obj="cWork">
 					</p>
 
 					<p>
-						<span>Очистить все данные всех файлов</span>
+						<span class="settingTitle">Показывать в статус баре:</span></br>
+						<input type="radio" data-obj="statusBar-item" value="workTime"> время работы</br>
+						<input type="radio" data-obj="statusBar-item" value="keyCount"> кол-во нажатий</br>
+						<input type="radio" data-obj="statusBar-item" value="freeTime"> время отдыха</br>
+						<input type="radio" data-obj="statusBar-item" value="totalTime"> общее время
+					</p>
+
+					<p>
+						<span class="settingTitle">Статистика в статус баре:</span></br>
+						<input type="radio" data-obj="statusBar-type" value="openedFile"> только для открытого файла</br>
+						<input type="radio" data-obj="statusBar-type" value="allFiles"> для всех файлов</br>
+					</p>
+
+					<p>
+						<span class="settingTitle">Очистить все данные всех файлов</span>
 						<input type="radio" id="clearFilesData" data-obj="clearFilesData">
 					</p>
 
@@ -932,8 +980,6 @@ function setupWebview (
 							else{
 								settings[attr] = value;
 							}
-	
-						   
 						});
 						const vscode = acquireVsCodeApi();
 						vscode.postMessage(settings);
