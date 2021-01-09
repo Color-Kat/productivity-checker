@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import * as util from "util";
-import * as inspector from "inspector";
-import { strict } from "assert";
+// import * as util from "util";
+// import * as inspector from "inspector";
+// import { strict } from "assert";
 
 type TimeLineData = {
 	[key: string]: {
@@ -11,7 +11,6 @@ type TimeLineData = {
 		keyCount: number;
 		date: number;
 		language: string;
-		// timestamp: number;
 	};
 };
 
@@ -50,6 +49,9 @@ let outsideWorkTimeCount = 240,
 // if a person does not write anything for a long time, then we believe that he is resting
 let pauseInCodingCount = 180,
 	pauseInCoding = pauseInCodingCount;
+
+// extention started now - don't increase free time
+let extStart = true;
 
 // return name of opened file
 function getCurrentFile () {
@@ -139,6 +141,8 @@ export async function activate (context: vscode.ExtensionContext) {
 				vscode.window.showInformationMessage(
 					"Откройте какую-нибудь папку и запустите чекер еще раз"
 				);
+			} else {
+				extStart = true; // don't increase free time
 			}
 		}
 	);
@@ -149,6 +153,16 @@ export async function activate (context: vscode.ExtensionContext) {
 	// get data
 	if (!context.globalState.get("filesData")) {
 		context.globalState.update("filesData", {});
+	}
+	if (
+		!context.globalState.get("productivity-checker-settings") ||
+		!(context.globalState.get("productivity-checker-settings") as { cWork: number }).cWork
+	) {
+		context.globalState.update("productivity-checker-settings", {
+			cWork: 3.27,
+			cKey: 5,
+			cFree: 4.8
+		});
 	}
 
 	let contextFiles: { [key: string]: FileData } | undefined = context.globalState.get(
@@ -163,14 +177,11 @@ export async function activate (context: vscode.ExtensionContext) {
 
 	setClearData(); // if data of this file is not defined, set it
 
-	// setLanguage(); // set language for opened file
-	// fillFiledates();
-
 	// funciton for open page with all data about productivity
 	let showWebViewPanel = vscode.commands.registerCommand(
 		"productivity-checker.showProductivityInformation",
 		async () => {
-			const panel = vscode.window.createWebviewPanel(
+			const currentPanel = vscode.window.createWebviewPanel(
 				"productivityTracker",
 				"Productivity Tracker",
 				vscode.ViewColumn.One,
@@ -182,7 +193,36 @@ export async function activate (context: vscode.ExtensionContext) {
 				}
 			);
 
-			panel.webview.html = setupWebview(context, panel, getProjectName(), getCurrentFile());
+			function webView () {
+				currentPanel.webview.html = setupWebview(
+					context,
+					currentPanel,
+					getProjectName(),
+					getCurrentFile()
+				);
+			}
+			webView();
+
+			// Handle messages from the webview
+			currentPanel.webview.onDidReceiveMessage(
+				message => {
+					switch (message.command) {
+						case "saveSettings":
+							context.globalState.update("productivity-checker-settings", {
+								cWork: message.cWork,
+								cFree: message.cFree,
+								cKey: message.cKey
+							});
+							if (message.clearFilesData) {
+								context.globalState.update("filesData", {});
+							}
+							return;
+					}
+					webView(); // update with new settings
+				},
+				undefined,
+				context.subscriptions
+			);
 		}
 	);
 
@@ -196,8 +236,6 @@ export async function activate (context: vscode.ExtensionContext) {
 		vscode.window.onDidChangeActiveTextEditor(() => {
 			// save data about new file
 			setClearData();
-			// setLanguage();
-			// fillFiledates();
 
 			// update data in status bar
 			updateStatusBar();
@@ -232,15 +270,24 @@ export async function activate (context: vscode.ExtensionContext) {
 			// User is working yet
 			if (isTyped === 0) {
 				pauseInCoding = pauseInCodingCount;
+
+				if (extStart) {
+					extStart = false;
+				}
 			} else {
 				isTyped--;
 			}
 		});
 
 		function tic () {
+			if (extStart) {
+				return;
+			} // don't increase free time.
+
 			let projectName = getProjectName();
 			let fileName = getCurrentFile();
 			let date = getCurrentDate();
+
 			if (fileName === "") {
 				return;
 			}
@@ -298,7 +345,7 @@ export async function activate (context: vscode.ExtensionContext) {
 		setInterval(tic, 1000);
 	}
 
-	vscode.window.showInformationMessage(out ? out : "lox");
+	// vscode.window.showInformationMessage(out ? out : "lox");
 
 	context.subscriptions.push(showWebViewPanel);
 }
@@ -383,6 +430,7 @@ function setupWebview (
 					width: 100%;
 					height: max-content;
 					margin-bottom: 10px;
+					position: relative;
 				}
 				#tabs span {
 					padding: 7px;
@@ -401,6 +449,11 @@ function setupWebview (
 					padding: 8px;
 					padding-top: 7px;
 					background: rgb(78, 78, 78);
+				}
+				#tabs #settings{
+					position: absolute;
+					top: -7px;
+					right: 0;
 				}
 
 
@@ -423,12 +476,67 @@ function setupWebview (
 					color: #F0652A;
 				}
 				.info-text #info-language{
+					color: #b522ab;
+				}
+				.info-text #info-salary{
 					color: #e6e861;
+				}
+
+				#settingsWindow{
+					position: fixed;
+					opacity: 0;
+					transition: all 1s ease-in-out; 
+					top: 0;
+					left: 0;
+					width: 100%;
+					min-height: 100%;
+					background: #242424;
+					color: white;
+					display: flex;
+					justify-content: center;
+					pointer-events: none;
+				}
+				#settingsWindow.settings-active{
+					opacity: 1;
+					z-index: 1000;
+					pointer-events: all;
+				}
+				#settingsWindow .settingsWindow-wrapper{
+					width: 100%;
+					margin: 0 100px;
+				}
+				#settingsWindow .settingsWindow-wrapper * {
+					width: 100%;
+				}
+				#settingsWindow .settingsWindow-wrapper h1 {
+					display: flex;
+					justify-content: center;
+				}
+				#settingsWindow .settingsWindow-wrapper input {
+					width: 150px;
 				}
 			</style>
 		</head>
 		<body>
 			<h1 align="center">Статистика продуктивности</h1>
+
+			<div id="settingsWindow">
+				<div class="settingsWindow-wrapper">
+					<h1>Настройки productivity-trecker</h1>
+
+					<p>
+						<span>Сколько вы берете за час своей работы?</span>
+						<input type="number" id="hSalary" data-obj="cWork">
+					</p>
+
+					<p>
+						<span>Очистить все данные всех файлов</span>
+						<input type="radio" id="clearFilesData" data-obj="clearFilesData">
+					</p>
+
+					<button id="settingsSave">Сохранить</button>
+				</div>
+			</div>
 
 			<div class="info">
 				<h2>Общая статистика за месяц</h2>
@@ -449,6 +557,7 @@ function setupWebview (
 				<span class="active" id="time">Время</span>
 				<span id="key">Кол-во клавиш</span>
 				<span id="cash">Заработок</span>
+				<span id="settings">Настройки</span>
 			</div>
 	
 			<canvas id="key-chart"></canvas>
@@ -483,10 +592,14 @@ function setupWebview (
 				}
 				
 				// coefficients, data for get cash value
-				let c_work = 2.11,
-					c_key  = 5,
-					c_free = 4.8;
-					
+				let coefficients = JSON.parse(\`${JSON.stringify(
+					context.globalState.get("productivity-checker-settings")
+				)}\`);
+				
+				let c_work = coefficients.cWork,
+					c_key  = coefficients.cKey,
+					c_free = coefficients.cFree;
+
 				function getFileData (project, filename) {
 					labelsData = [];
 					viewData = {
@@ -522,7 +635,6 @@ function setupWebview (
 								cash       = 0;
 
 							// for a more accurate result
-							console.log(work_time);
 							if (work_time > 360) {
 								cash = Math.round(( work_time / c_work ) + ( (key_count * 100 * c_key) / work_time ) - ( free_time / c_free ));
 							} else {
@@ -537,9 +649,7 @@ function setupWebview (
 							viewData['keyCount'].push(key_count);
 							viewData['cash'].push(cash);
 
-							console.log(filesData[project][filename][date]);
 							filesData[project][filename][date] = currentFile;
-							console.log(filesData[project][filename][date]);
 						}
 
 						// add date to labels
@@ -725,7 +835,13 @@ function setupWebview (
 					tabs.forEach(tab => {
 						tab.classList.remove('active'); // clear active class for all
 						tab.onclick = () => {
-							openFileData(currentProject, currentFile, tab.id)
+							if (tab.id !== 'settings') {
+								// open new chart
+								openFileData(currentProject, currentFile, tab.id)
+							} else {
+								// open settings page
+								openSettings();
+							}
 							tabs.forEach(tab => {tab.classList.remove('active');}); // delete active class for all
 							tab.classList.add('active'); // add class active
 						};
@@ -741,8 +857,6 @@ function setupWebview (
 						info_salary    = 0;
 					let languages = {},
 						info_language = 'Русский;)';
-					console.log(viewData);
-					console.log(Object.values(filesData));
 					for (let project of Object.values(filesData)) {
 						for (let file of Object.values(project)) {
 							for (let day of Object.values(file)) {
@@ -790,6 +904,40 @@ function setupWebview (
 					document.querySelector('#info-free-time').innerHTML = Math.floor(info_free_time/60) + ' мин';
 					document.querySelector('#info-language').innerHTML  = info_language;
 					document.querySelector('#info-salary').innerHTML    = info_salary + 'руб';
+				}
+				
+				function openSettings () {
+					// open / close settings
+					document.querySelector('#settingsWindow').classList.toggle('settings-active');
+	
+					let inputs = document.querySelectorAll('#settingsWindow input');
+					let settings = {
+						command: 'saveSettings',
+						cWork: c_work,
+						cFree: c_free,
+						cKey : c_key 
+					};
+					// save settings on click button
+					document.querySelector('#settingsSave').onclick = () => {
+						// get value of all inputs
+						inputs.forEach(inp => {
+							let value = inp.value
+							let attr = inp.getAttribute('data-obj');
+							if (attr === 'cWork') {
+								settings.cWork = value && value > 100 ? 3600 / (+value - 100) : 1200 - 100;
+							} else if (attr === 'clearFilesData') {
+								settings.clearFilesData = inp.checked;
+							}
+	
+							else{
+								settings[attr] = value;
+							}
+	
+						   
+						});
+						const vscode = acquireVsCodeApi();
+						vscode.postMessage(settings);
+					}
 				}
 			</script>
 		</body>

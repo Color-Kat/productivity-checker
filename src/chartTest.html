@@ -127,6 +127,7 @@
         <style>
             body, html{
                 padding: 0 100px;
+                position: relative;
             }
             ol{
                 list-style: none;
@@ -151,8 +152,9 @@
                 width: 100%;
                 height: max-content;
                 margin-bottom: 10px;
+                position: relative;
             }
-            #tabs span {
+            #tabs span, #tabs div {
                 padding: 7px;
                 border-radius: 0 0 5px 5px;
                 background: rgb(74, 74, 74);
@@ -160,10 +162,15 @@
                 transition: all .05s ease-in-out;
                 cursor: pointer;
             }
-            #tabs span:hover {
+            #tabs span:hover,  #tabs div:hover {
                 padding: 8px;
                 padding-top: 7px;
                 background: rgb(76, 76, 76);
+            }
+            #tabs #settings{
+                position: absolute;
+                top: -7px;
+                right: 0;
             }
 
             .chart-wrapper {
@@ -171,10 +178,64 @@
                 display: flex;
                 justify-content: center;
             }
+
+
+            #settingsWindow{
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                min-height: 100%;
+                background: #242424;
+                color: white;
+                display: flex;
+                justify-content: center;
+            }
+            #settingsWindow.settings-active .settingsWindow-wrapper{
+                opacity: 1;
+                z-index: 1000;
+                pointer-events: all;
+            }
+
+            #settingsWindow .settingsWindow-wrapper{
+                width: 100%;
+                margin: 0 100px;
+                opacity: 0;
+                transition: all .5s ease-in-out; 
+                pointer-events: none;
+            }
+            #settingsWindow .settingsWindow-wrapper * {
+                width: 100%;
+            }
+            #settingsWindow .settingsWindow-wrapper h1 {
+                display: flex;
+                justify-content: center;
+            }
+            #settingsWindow .settingsWindow-wrapper input {
+                width: 150px;
+            }
         </style>
     </head>
     <body>
         <h1>Статистика продуктивности</h1>
+
+        <div id="settingsWindow">
+            <div class="settingsWindow-wrapper">
+                <h1>Настройки productivity-trecker</h1>
+
+                <p>
+                    <span>Сколько вы берете за час своей работы?</span>
+                    <input type="number" id="hSalary" data-obj="cWork">
+                </p>
+
+                <p>
+                    <span>Очистить все данные всех файлов</span>
+                    <input type="radio" id="clearFilesData" data-obj="clearFilesData">
+                </p>
+
+                <button id="settingsSave">Сохранить</button>
+            </div>
+        </div>
 
         <div class="info">
             <h2>Общая статистика за месяц</h2>
@@ -194,6 +255,7 @@
             <span id="time">Время</span>
             <span id="key">Кол-во клавиш</span>
             <span id="cash">Заработок</span>
+            <span id="settings">Настройки</span>
         </div>
         <div class="chart-wrapper">
             <div class="chart-container" style="position: relative; height:40vh; width:80vw"></div>
@@ -401,8 +463,8 @@
             let labelsData = []; // data for labels of chart
              // coefficients, data for get cash value
              let c_work = 2.11,
-                c_key  = 5,
-                c_free = 4.8;
+                 c_key  = 5,
+                 c_free = 4.8;
 
             getFileData("machicoro.com", "server.php");
 
@@ -452,12 +514,12 @@
 								total_time = work_time + free_time,
 								key_count  = currentFile.keyCount,
 								cash       = 0;
-
+                            console.log(c_work);
 							// for a more accurate result
 							if (work_time > 360) {
 								cash = ( work_time / c_work ) + ( (key_count * 100 * c_key) / work_time ) - ( free_time / c_free );
 							} else {
-								cash = 'Невозможно посчитать';
+								cash = 0;
 							}
 
 							viewData['workTime'].push(work_time);
@@ -465,12 +527,6 @@
 							viewData['totalTime'].push(total_time);
 							viewData['keyCount'].push(key_count);
                             viewData['cash'].push(cash);
-                            
-                            work_time  = 3600;
-                            free_time  = 0;
-                            key_count  = 1500;
-                            cash       = 0;
-                            console.log(( work_time / c_work ) + ( (key_count * 100 * c_key) / work_time ) - ( free_time / c_free ));
                         }
                         
                        
@@ -636,11 +692,16 @@
                 let tabs = document.querySelectorAll('#tabs span');
                 tabs.forEach(tab => {
                     tab.addEventListener('click', () => {
-                        openFileData("machicoro.com", "server.php", tab.id)
+                        if (tab.id !== 'settings') {
+                            // open new chart
+                            openFileData("machicoro.com", "server.php", tab.id)
+                        } else {
+                            // open settings page
+                            openSettings();
+                        }
                     });
                 });
             }
-
 
             print_totalStatistics();
             function print_totalStatistics() {
@@ -679,6 +740,36 @@
                     document.querySelector('#info-key-count').innerHTML = info_key_count;
                     document.querySelector('#info-free-time').innerHTML = Math.floor(info_free_time/60) + ' мин';
                     document.querySelector('#info-language').innerHTML = info_language;
+                }
+            }
+
+
+            function openSettings () {
+                // open / close settings
+                document.querySelector('#settingsWindow').classList.toggle('settings-active');
+
+                let inputs = document.querySelectorAll('#settingsWindow input');
+                let settings = {};
+                // save settings on click button
+                document.querySelector('#settingsSave').onclick = () => {
+                    // get value of all inputs
+                    inputs.forEach(inp => {
+                        let value = inp.value
+                        console.log(value);
+                        let attr = inp.getAttribute('data-obj');
+                        if (attr === 'cWork') {
+                            settings.cWork = value ? 3600 / +value - 100 : 1200 - 100;
+                        } else if (attr === 'clearFilesData') {
+                            settings.clearFilesData = inp.checked;
+                        }
+
+                        else{
+                            settings[attr] = value;
+                        }
+
+                       
+                    });
+                    console.log(settings);
                 }
             }
         </script>
