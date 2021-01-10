@@ -160,10 +160,13 @@ export async function activate (context: vscode.ExtensionContext) {
 		!context.globalState.get("productivity-checker-settings") ||
 		!(context.globalState.get("productivity-checker-settings") as { cWork: number }).cWork
 	) {
+		// standart settings
 		context.globalState.update("productivity-checker-settings", {
 			cWork: 3.27,
 			cKey: 5,
-			cFree: 4.8
+			cFree: 4.8,
+			statusBarType: "openedFile",
+			statusBarItem: "workTime"
 		});
 	}
 
@@ -208,19 +211,15 @@ export async function activate (context: vscode.ExtensionContext) {
 			// Handle messages from the webview
 			currentPanel.webview.onDidReceiveMessage(
 				message => {
-					switch (message.command) {
-						case "saveSettings":
-							context.globalState.update("productivity-checker-settings", {
-								cWork: message.cWork,
-								cFree: message.cFree,
-								cKey: message.cKey
-							});
-							if (message.clearFilesData) {
-								context.globalState.update("filesData", {});
-							}
-							return;
+					// delete files data
+					if (message.clearFilesData) {
+						// console.log("delete!!!");
+						context.globalState.update("filesData", {});
 					}
-					webView(); // update with new settings
+					context.globalState.update("productivity-checker-settings", message.settings);
+
+					return;
+					// webView(); // update with new settings
 				},
 				undefined,
 				context.subscriptions
@@ -232,7 +231,7 @@ export async function activate (context: vscode.ExtensionContext) {
 		// create status bar
 		statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 10);
 		statusBarItem.command = "productivity-checker.showProductivityInformation"; // set onclick function
-		updateStatusBar();
+		updateStatusBar(context);
 
 		// on change active file
 		vscode.window.onDidChangeActiveTextEditor(() => {
@@ -240,7 +239,7 @@ export async function activate (context: vscode.ExtensionContext) {
 			setClearData();
 
 			// update data in status bar
-			updateStatusBar();
+			updateStatusBar(context);
 
 			if (isTyped === 0) {
 				pauseInCoding = pauseInCodingCount;
@@ -339,7 +338,7 @@ export async function activate (context: vscode.ExtensionContext) {
 			}
 
 			context.globalState.update("filesData", files); // save data
-			updateStatusBar(); // update status bar
+			updateStatusBar(context); // update status bar
 		}
 		tic();
 
@@ -371,12 +370,61 @@ vscode.window.onDidChangeWindowState(e => {
 	isWindowFocused = e.focused;
 });
 
-function updateStatusBar () {
-	let time = convertTime(
-		files[getProjectName()][getCurrentFile()][getCurrentDate()].workTime | 0
-	); // gt temp key
-	statusBarItem.text = `$(clock) Work time: ${time}`; // update text
-	statusBarItem.tooltip = `Время работы с файлом ${getCurrentFile()}`; // change file name in desc
+function updateStatusBar (context: vscode.ExtensionContext) {
+	// get settings
+	let settings = context.globalState.get("productivity-checker-settings") as {
+		statusBarType: string;
+		statusBarItem: string;
+	};
+
+	// variables to show in status var
+	let today = getCurrentDate();
+	let currentFile = files[getProjectName()][getCurrentFile()][today];
+	let workTime = 0,
+		keyCount = 0,
+		freeTime = 0,
+		totalTime = 0;
+
+	// show statistics for all files
+	if (settings.statusBarType === "allFiles") {
+		// get all data for today
+		Object.values(files).forEach(project => {
+			Object.values(project).forEach(file => {
+				if (!file[today]) {
+					return false;
+				}
+				// get today data of all files
+				workTime += file[today].workTime;
+				keyCount += file[today].keyCount;
+				freeTime += file[today].freeTime;
+				totalTime += file[today].freeTime + file[today].workTime;
+			});
+		});
+	} else if (settings.statusBarType === "openedFile") {
+		// get today data of opened file
+		workTime = currentFile.workTime | 0;
+		keyCount = currentFile.keyCount | 0;
+		freeTime = currentFile.freeTime | 0;
+		totalTime = freeTime + workTime;
+
+		statusBarItem.text = `$(clock) Work time: ${convertTime(workTime)}`; // update text
+		statusBarItem.tooltip = `Время работы с файлом ${getCurrentFile()}`; // change file name in desc
+	}
+
+	if (settings.statusBarItem === "workTime") {
+		statusBarItem.text = `$(clock) Work time: ${workTime}`; // update text
+		statusBarItem.tooltip = `Время работы сегодня`; // change file name in desc
+	} else if (settings.statusBarItem === "freeTime") {
+		statusBarItem.text = `$(clock) Free time: ${freeTime}`; // update text
+		statusBarItem.tooltip = `Время отдыха сегодня`; // change file name in desc
+	} else if (settings.statusBarItem === "totalTime") {
+		statusBarItem.text = `$(clock) Total time: ${totalTime}`; // update text
+		statusBarItem.tooltip = `Общее время`; // change file name in desc
+	} else if (settings.statusBarItem === "keyCount") {
+		statusBarItem.text = `$(clock) Key count: ${keyCount}`; // update text
+		statusBarItem.tooltip = `Кол-во нажатий`; // change file name in desc
+	}
+
 	statusBarItem.show();
 }
 function setupWebview (
@@ -520,13 +568,17 @@ function setupWebview (
 					font-size: 1.45em
 				}
 				#settingsWindow .settingsWindow-wrapper #hSalary {
-					width: 100px;
+					width: 120px !important;
 					background: #4a4a4a;
-					border-radius: 15px
-					color: white
+					border-radius: 5px;
+					color: white;
 					border: none;
 					outline: none;
 					padding: 5px;
+				}
+				#settingsWindow .settingsWindow-wrapper input {
+					border: none;
+					outline: none;
 				}
 				.settingTitle{
 					font-size: 1.23em;
@@ -558,23 +610,23 @@ function setupWebview (
 
 					<h1>Настройки productivity-trecker</h1>
 
-					<p>
+					<p id="getHourSalary">
 						<span class="settingTitle">Сколько вы берете за час своей работы?</span>
 						<input min="0" max="10000" type="number" id="hSalary" data-obj="cWork">
 					</p>
 
-					<p>
+					<p id="getStatusBarItem">
 						<span class="settingTitle">Показывать в статус баре:</span></br>
-						<input type="radio" data-obj="statusBar-item" value="workTime"> время работы</br>
-						<input type="radio" data-obj="statusBar-item" value="keyCount"> кол-во нажатий</br>
-						<input type="radio" data-obj="statusBar-item" value="freeTime"> время отдыха</br>
-						<input type="radio" data-obj="statusBar-item" value="totalTime"> общее время
+						<input name="statusBarItem" type="radio" data-obj="statusBar-item" value="workTime"> время работы</br>
+						<input name="statusBarItem" type="radio" data-obj="statusBar-item" value="keyCount"> кол-во нажатий</br>
+						<input name="statusBarItem" type="radio" data-obj="statusBar-item" value="freeTime"> время отдыха</br>
+						<input name="statusBarItem" type="radio" data-obj="statusBar-item" value="totalTime"> общее время
 					</p>
 
-					<p>
+					<p id="getStatusBarType">
 						<span class="settingTitle">Статистика в статус баре:</span></br>
-						<input type="radio" data-obj="statusBar-type" value="openedFile"> только для открытого файла</br>
-						<input type="radio" data-obj="statusBar-type" value="allFiles"> для всех файлов</br>
+						<input name="statusBarType" type="radio" data-obj="statusBar-type" value="openedFile"> только для открытого файла</br>
+						<input name="statusBarType" type="radio" data-obj="statusBar-type" value="allFiles"> для всех файлов</br>
 					</p>
 
 					<p>
@@ -908,10 +960,6 @@ function setupWebview (
 					for (let project of Object.values(filesData)) {
 						for (let file of Object.values(project)) {
 							for (let day of Object.values(file)) {
-								
-
-
-
 								// work data
 								let work_time  = day.workTime,
 									free_time  = day.freeTime,
@@ -958,31 +1006,42 @@ function setupWebview (
 					// open / close settings
 					document.querySelector('#settingsWindow').classList.toggle('settings-active');
 	
-					let inputs = document.querySelectorAll('#settingsWindow input');
-					let settings = {
-						command: 'saveSettings',
-						cWork: c_work,
-						cFree: c_free,
-						cKey : c_key 
+					// get prev. settings
+					let message = {
+						settings: JSON.parse(\`${JSON.stringify(
+							context.globalState.get("productivity-checker-settings")
+						)}\`)
 					};
+
+					/// ----- UPDATE SETTINGS BY VALUES ----- ///
+
 					// save settings on click button
 					document.querySelector('#settingsSave').onclick = () => {
-						// get value of all inputs
-						inputs.forEach(inp => {
-							let value = inp.value
-							let attr = inp.getAttribute('data-obj');
-							if (attr === 'cWork') {
-								settings.cWork = value && value > 100 ? 3600 / (+value - 100) : 1200 - 100;
-							} else if (attr === 'clearFilesData') {
-								settings.clearFilesData = inp.checked;
-							}
-	
-							else{
-								settings[attr] = value;
+						// -----cWork from #hSalary----- //
+						let hSalaryVal = document.querySelector('#hSalary').value;
+						message.settings.cWork = hSalaryVal && hSalaryVal > 100 ? 3600 / (+hSalaryVal - 100) : 1200 - 100;
+
+						// -----clear file data from #clearFilesData----- //
+						message.clearFilesData = document.querySelector('#clearFilesData').checked;
+					
+						// -----status bar type (opened file or all files) from #getStatusBarType----- //
+						let statusBarType_rad = document.querySelectorAll('#getStatusBarType input');
+						statusBarType_rad.forEach(item => {
+							if (item.checked) {
+								message.settings.statusBarType = item.value;
 							}
 						});
+
+						// -----status bar item (work time | free time | total time | key count) from #getStatusBarItem----- //
+						let statusBarItem_rad = document.querySelectorAll('#getStatusBarItem input');
+						statusBarItem_rad.forEach(item => {
+							if (item.checked) {
+								message.settings.statusBarItem = item.value;
+							}
+						});
+
 						const vscode = acquireVsCodeApi();
-						vscode.postMessage(settings);
+						vscode.postMessage(message);
 					}
 				}
 			</script>
