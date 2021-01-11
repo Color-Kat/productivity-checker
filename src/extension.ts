@@ -91,6 +91,15 @@ function setClearData () {
 			keyCount: 0,
 			language: getLanguage()
 		};
+
+		let missingFilesCount: number =
+			30 - Object.keys(files[getProjectName()][getCurrentFile()]).length; // missing dates in statistics
+		// data for more than a month
+		if (missingFilesCount < 0) {
+			delete files[getProjectName()][getCurrentFile()][
+				Object.keys(files[getProjectName()][getCurrentFile()])[0]
+			]; // delete first element(the latest date)
+		}
 	}
 }
 
@@ -211,12 +220,25 @@ export async function activate (context: vscode.ExtensionContext) {
 			// Handle messages from the webview
 			currentPanel.webview.onDidReceiveMessage(
 				message => {
-					// delete files data
+					// delete files data if true
 					if (message.clearFilesData) {
 						// console.log("delete!!!");
 						context.globalState.update("filesData", {});
 					}
-					context.globalState.update("productivity-checker-settings", message.settings);
+					console.log(message);
+					// save settings from settings page
+					if (message.command === "saveSettings") {
+						context.globalState.update(
+							"productivity-checker-settings",
+							message.settings
+						);
+					} else if (message.command === "deleteFileData") {
+						// delete file history
+						if (files[message.project][message.file]) {
+							delete files[message.project][message.file];
+							context.globalState.update("filesData", files);
+						}
+					}
 
 					return;
 					// webView(); // update with new settings
@@ -406,19 +428,16 @@ function updateStatusBar (context: vscode.ExtensionContext) {
 		keyCount = currentFile.keyCount | 0;
 		freeTime = currentFile.freeTime | 0;
 		totalTime = freeTime + workTime;
-
-		statusBarItem.text = `$(clock) Work time: ${convertTime(workTime)}`; // update text
-		statusBarItem.tooltip = `Время работы с файлом ${getCurrentFile()}`; // change file name in desc
 	}
 
 	if (settings.statusBarItem === "workTime") {
-		statusBarItem.text = `$(clock) Work time: ${workTime}`; // update text
+		statusBarItem.text = `$(clock) Work time: ${convertTime(workTime)}`; // update text
 		statusBarItem.tooltip = `Время работы сегодня`; // change file name in desc
 	} else if (settings.statusBarItem === "freeTime") {
-		statusBarItem.text = `$(clock) Free time: ${freeTime}`; // update text
+		statusBarItem.text = `$(clock) Free time: ${convertTime(freeTime)}`; // update text
 		statusBarItem.tooltip = `Время отдыха сегодня`; // change file name in desc
 	} else if (settings.statusBarItem === "totalTime") {
-		statusBarItem.text = `$(clock) Total time: ${totalTime}`; // update text
+		statusBarItem.text = `$(clock) Total time: ${convertTime(totalTime)}`; // update text
 		statusBarItem.tooltip = `Общее время`; // change file name in desc
 	} else if (settings.statusBarItem === "keyCount") {
 		statusBarItem.text = `$(clock) Key count: ${keyCount}`; // update text
@@ -852,7 +871,21 @@ function setupWebview (
 								openFileData(projectName, obj[child]);
 							}
 							btn.appendChild(objToHtmlList(obj[child]));
+
+							// button for delete file history
+							let deleteBtn = document.createElement("BUTTON");
+							deleteBtn.onclick = () => {
+								if (deleteFileData(projectName, obj[child])) {
+									// delete element
+									deleteBtn.parentNode.removeChild(deleteBtn);
+									btn.parentNode.removeChild(btn);
+								}
+							}
+							deleteBtn.classList.add('deleteFileDataBtn');
+							deleteBtn.innerHTML = '+';
+
 							li.appendChild(btn);
+							li.appendChild(deleteBtn);
 							ol.appendChild(li);
 						}
 						return ol;
@@ -1002,12 +1035,14 @@ function setupWebview (
 					document.querySelector('#info-salary').innerHTML    = info_salary + 'руб';
 				}
 				
+				const vscode = acquireVsCodeApi();
 				function openSettings () {
 					// open / close settings
 					document.querySelector('#settingsWindow').classList.toggle('settings-active');
 	
 					// get prev. settings
 					let message = {
+						command: 'saveSettings',
 						settings: JSON.parse(\`${JSON.stringify(
 							context.globalState.get("productivity-checker-settings")
 						)}\`)
@@ -1040,8 +1075,23 @@ function setupWebview (
 							}
 						});
 
-						const vscode = acquireVsCodeApi();
 						vscode.postMessage(message);
+					}
+				}
+
+				
+				function deleteFileData(project, file){
+					let message = {
+						command: 'deleteFileData',
+						project,
+						file
+					}
+
+					try {
+						vscode.postMessage(message);
+						return true;
+					} catch (e) {
+						return false;
 					}
 				}
 			</script>
