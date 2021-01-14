@@ -3,7 +3,6 @@ import * as path from "path";
 import { Uri } from "vscode";
 // import * as util from "util";
 // import * as inspector from "inspector";
-// import { strict } from "assert";
 
 type TimeLineData = {
 	[key: string]: {
@@ -163,12 +162,14 @@ export async function activate (context: vscode.ExtensionContext) {
 
 	// get data
 	if (!context.globalState.get("filesData")) {
+		console.log("Данные файлов сбросились");
 		context.globalState.update("filesData", {});
 	}
 	if (
 		!context.globalState.get("productivity-checker-settings") ||
 		!(context.globalState.get("productivity-checker-settings") as { cWork: number }).cWork
 	) {
+		console.log("Настройки сбросились");
 		// standart settings
 		context.globalState.update("productivity-checker-settings", {
 			cWork: 3.27,
@@ -206,7 +207,6 @@ export async function activate (context: vscode.ExtensionContext) {
 					]
 				}
 			);
-
 			function webView () {
 				currentPanel.webview.html = setupWebview(
 					context,
@@ -466,22 +466,29 @@ function setupWebview (
 			</script>
 
 			<style>
-				body, html{
+				body,
+				html {
 					padding: 0 100px;
 					oveflow-x: hidden;
 				}
+		
 				@media screen and (max-width: 1300px) {
-					body, html {
+		
+					body,
+					html {
 						padding: 0 15px;
 					}
+		
 					.info {
-						padding: 0 20px !important;
+						padding: 0 45px !important;
 					}
 				}
-				ol{
+		
+				ol {
 					list-style: none;
 					padding: 10px;
 				}
+		
 				button {
 					background: rgb(74, 74, 74);
 					border: none;
@@ -489,20 +496,23 @@ function setupWebview (
 					margin: 5px;
 					border-radius: 5px;
 				}
+		
 				button:hover {
 					transform: scale(1.02, 1.02);
 				}
-				#filesListContainer ul{
+		
+				#filesListContainer ul {
 					display: flex;
-					justify-content: space-evenly ;
+					justify-content: space-evenly;
 				}
-					
-				#tabs{
+		
+				#tabs {
 					width: 100%;
 					height: max-content;
 					margin-bottom: 10px;
 					position: relative;
 				}
+		
 				#tabs span {
 					padding: 7px;
 					border-radius: 0 0 5px 5px;
@@ -511,52 +521,70 @@ function setupWebview (
 					transition: all .05s ease-in-out;
 					cursor: pointer;
 				}
+		
 				#tabs span.active {
 					background: rgb(90, 90, 90);
 					padding-top: 7px;
 					padding: 8px;
 				}
+		
 				#tabs span:hover {
 					padding: 8px;
 					padding-top: 7px;
 					background: rgb(78, 78, 78);
 				}
-				#tabs #settings{
+		
+				#tabs #settings {
 					position: absolute;
 					top: -7px;
 					right: 0;
 				}
-
-
-				.info{
+		
+		
+				.info {
 					width: 100%;
 					padding: 0 130px;
 					margin: 45px 0;
+					position: relative;
+					box-sizing: border-box;
 				}
-				.info-text{
-					font-size: 1.2em;
+		
+				.info-wrapper {
+					display: flex;
+					justify-content: space-between;
+					width: 100%;
+					height: 100%;
+					position: relative;
 				}
-
-				.info-text #info-work-time{
+		
+				.info-text {
+					font-size: 1.25em;
+				}
+		
+				.info-text #info-work-time {
 					color: #24AEF3;
 				}
-				.info-text #info-key-count{
+		
+				.info-text #info-key-count {
 					color: #22c76c;
 				}
-				.info-text #info-free-time{
+		
+				.info-text #info-free-time {
 					color: #F0652A;
 				}
-				.info-text #info-language{
+		
+				.info-text #info-language {
 					color: #b522ab;
 				}
-				.info-text #info-salary{
+		
+				.info-text #info-salary {
 					color: #e6e861;
 				}
-
-				#settingsWindow{
+		
+				#settingsWindow {
 					position: fixed;
 					opacity: 0;
-					transition: all .5s ease-in-out; 
+					transition: all .5s ease-in-out;
 					top: 0;
 					left: 0;
 					width: 100%;
@@ -567,25 +595,30 @@ function setupWebview (
 					justify-content: center;
 					pointer-events: none;
 				}
-				#settingsWindow.settings-active{
+		
+				#settingsWindow.settings-active {
 					opacity: 1;
 					z-index: 1000;
 					pointer-events: all;
 				}
-				#settingsWindow .settingsWindow-wrapper{
+		
+				#settingsWindow .settingsWindow-wrapper {
 					width: 100%;
 					margin: 0 100px;
 					margin-top: 20px;
 				}
+		
 				#settingsWindow .settingsWindow-wrapper * {
 					width: 100%;
 					font-size: 1.1em
 				}
+		
 				#settingsWindow .settingsWindow-wrapper h1 {
 					display: flex;
 					justify-content: center;
 					font-size: 1.45em
 				}
+		
 				#settingsWindow .settingsWindow-wrapper #hSalary {
 					width: 120px !important;
 					background: #4a4a4a;
@@ -595,28 +628,91 @@ function setupWebview (
 					outline: none;
 					padding: 5px;
 				}
+		
 				#settingsWindow .settingsWindow-wrapper input {
 					border: none;
 					outline: none;
 				}
-				.settingTitle{
+		
+				.settingTitle {
 					font-size: 1.23em;
 					font-weight: bold;
 				}
-
-				#settingsWindow #settingsClose{
+		
+				#settingsWindow #settingsClose {
 					position: absolute;
 					right: 0;
 					transform: rotate(45deg);
 					z-index: 1001;
 				}
-
+		
 				#settingsWindow .settingsWindow-wrapper input[type="radio"] {
 					width: 50px;
 					margin-left: 25px;
 				}
-
-
+		
+				// time increase 
+				.timeIncrease-wrapper {
+					position: absolute;
+					height: 100%;
+					width: max-content;
+				}
+				.timeIncrease {
+					position: relative;
+					display: flex;
+					justify-content: center;
+					height: 100%;
+				}
+		
+				.arcs{
+					width: max-content;
+					height: max-content;
+					position: relative;
+					display: flex;
+					justify-content: start;
+				}
+				.contIncrease-wrapper{
+					position: absolute;
+					height: max-content;
+					overflow: hidden;
+				}
+				.cont, .contIncrease {
+					position: relative;
+					width: 110px;
+					height: 55px;
+					border-radius: 120px 120px 0 0;
+					border-top: 15px solid;
+					border-left: 15px solid;
+					border-right: 15px solid;
+				}
+				.contIncrease {
+					--progress-color: #106b08;
+					border-top: 15px solid var(--progress-color);
+					border-left: 15px solid var(--progress-color);
+					border-right: 15px solid var(--progress-color);
+				}
+				.increaseText {
+					margin: 5px 0;
+					position: absolute;
+					width: max-content;
+					height: max-content;
+					bottom: -10px;
+					font-size: 1.25em;
+				}
+				#increasePercent{
+					font-size: 1.4em;
+					font-weight: bold;
+					width: max-content;
+					height: max-content;
+					position: absolute;
+					color: red;
+					left: 50%;
+					top: 50%;
+					transform: translateX(-50%);
+				}
+				#increasePercent span{
+					margin-right: 4px;
+				}
 
 			</style>
 		</head>
@@ -648,6 +744,12 @@ function setupWebview (
 						<input name="statusBarType" type="radio" data-obj="statusBar-type" value="allFiles"> для всех файлов</br>
 					</p>
 
+					<p id="blackList">
+						<span class="settingTitle">Добавте название</span></br>
+						<input name="statusBarType" type="radio" data-obj="statusBar-type" value="openedFile"> только для открытого файла</br>
+						<input name="statusBarType" type="radio" data-obj="statusBar-type" value="allFiles"> для всех файлов</br>
+					</p>
+
 					<p>
 						<span class="settingTitle">Очистить все данные всех файлов</span>
 						<input type="radio" id="clearFilesData" data-obj="clearFilesData">
@@ -659,12 +761,26 @@ function setupWebview (
 
 			<div class="info">
 				<h2>Общая статистика за месяц</h2>
-				<div class="info-text">
-					Вы работали <b><span id="info-work-time"></span></b>. <br>
-					Сделали <b><span id="info-key-count"></span></b> нажатий. <br>
-					Отдыхали <b><span id="info-free-time"></span></b>. <br>
-					Ваш любимый язык в этом месяце - <b><span id="info-language"></span></b>. <br>
-					И ваша зарплата в этом месяце - <b><span id="info-salary"></span></b>.
+				<div class="info-wrapper">
+					<div class="info-text">
+						Вы работали <b><span id="info-work-time"></span></b>. <br>
+						Сделали <b><span id="info-key-count"></span></b> нажатий. <br>
+						Отдыхали <b><span id="info-free-time"></span></b>. <br>
+						Ваш любимый язык в этом месяце - <b><span id="info-language"></span></b>. <br>
+						И ваша зарплата в этом месяце - <b><span id="info-salary"></span></b>.
+					</div>
+					<div class="timeIncrease-wrapper">
+						<div class="timeIncrease" title="Наколько вы сегодня продуктевней?">
+							<div class="arcs">
+								<div class="cont"></div>
+								<div class="contIncrease-wrapper" id="visualizer">
+									<div class="contIncrease" id="visualizerArc"></div>
+								</div>
+								<div id="increasePercent">^150%</div>
+							</div>
+							<div class="increaseText">Сегодня вы работали <b><span id="todayTime"></span></b></div>
+						</div>
+					</div>
 				</div>
 			</div>
 
@@ -882,7 +998,7 @@ function setupWebview (
 								}
 							}
 							deleteBtn.classList.add('deleteFileDataBtn');
-							deleteBtn.innerHTML = '+';
+							deleteBtn.innerHTML = '<span>X</span>';
 
 							li.appendChild(btn);
 							li.appendChild(deleteBtn);
@@ -1010,7 +1126,6 @@ function setupWebview (
 								info_key_count += key_count;
 								info_free_time += free_time;
 								info_salary    += cash;
-
 	
 								if (!languages[day.language]) {
 									languages[day.language] = 0;
@@ -1094,6 +1209,62 @@ function setupWebview (
 						return false;
 					}
 				}
+
+				function convertTime (totalSeconds) {
+					totalSeconds = Number(totalSeconds);
+					let h = Math.floor(totalSeconds / 3600);
+					let m = Math.floor((totalSeconds % 3600) / 60);
+					let s = Math.floor((totalSeconds % 3600) % 60);
+				
+					let hDisplay = h > 0 ? h + ":" : "";
+					let mDisplay = m > 0 ? (m < 10 ? "0" + m + ":" : m + ":") : "00:";
+					let sDisplay = s > 9 ? s : "0" + s;
+					return hDisplay + mDisplay + sDisplay;
+				}
+
+				function todayIncrease() {
+					let time_elem = document.querySelector('#todayTime');
+					let todayTime = 0;
+					let yesterdayTime = 0;
+
+					// get today and yesterday work time
+					Object.values(filesData).forEach(project => {
+						Object.values(project).forEach(file => {
+							let today = file[getCurrentDate()];
+							let yesterday = file[getCurrentDate(new Date(new Date().setDate(new Date().getDate() - 1) ))];
+							if (today && today.workTime) todayTime += today.workTime;
+							if (yesterday && yesterday.workTime) yesterdayTime += yesterday.workTime;
+						});
+					});
+					time_elem.innerHTML = convertTime(todayTime);
+
+					// get percent of increase
+					let visualizer_elem = document.querySelector('#visualizer');
+					let increase = Math.round(todayTime / (yesterdayTime + 1) * 100);
+					visualizer_elem.style.width = increase + '%';
+
+					// set color
+					let visualizer_color = "#fff";
+					if (increase < 10) visualizer_color = "#ff1414";
+					else if (increase < 20) visualizer_color = "#ed472d";
+					else if (increase < 30) visualizer_color = "#ed6d2d";
+					else if (increase < 40) visualizer_color = "#ed8d2d";
+					else if (increase < 50) visualizer_color = "#edb739";
+					else if (increase < 60) visualizer_color = "#e3d21e";
+					else if (increase < 70) visualizer_color = "#bce31e";
+					else if (increase < 80) visualizer_color = "#91e31e";
+					else if (increase < 90) visualizer_color = "#67d12e";
+					else if (increase < 95) visualizer_color = "#58b825";
+					else if (increase > 95) visualizer_color = "#4eab1d";
+					visualizer_elem.children[0].style.borderColor = visualizer_color;
+
+					// show increase as procent
+					let increasePercent_elem = document.querySelector('#increasePercent');
+					let increasePercent = 100 - increase;
+					increasePercent_elem.innerHTML = (increasePercent > 0 ? '<span>&or;</span>'+ increasePercent : '<span>&and;</span>'+ -increasePercent )+'%';
+					increasePercent_elem.style.color = visualizer_color;
+				}
+				todayIncrease();
 			</script>
 		</body>
 	</html>`;

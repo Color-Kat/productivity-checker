@@ -1,777 +1,928 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Будь еще продуктивней</title>
-        <script src="../media/chart.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/brain/0.6.3/brain.min.js"></script>
-        <script>
-            // const config = {
-            //     iterations: 20000,
-            //     hiddenLayers: [20], // array of ints for the sizes of the hidden layers in the network
-            //     activation: 'sigmoid', // supported activation types: ['sigmoid', 'relu', 'leaky-relu', 'tanh'],
-            //     // leakyReluAlpha: 0.01, // supported for activation type 'leaky-relu'
-            // };
-            // const net = new brain.NeuralNetwork(config);
 
-            // // наибольшй общий делитель
-            // function NOD (arr) {
-            //     let x = arguments[0];
-            //     for (i = 1; i < arguments.length; i++) {
-            //         let y = arguments[i];
-            //         while (x && y) {
-            //             x > y ? x %= y : y %= x;
-            //         }
-            //         x += y;
-            //     }
-            //     return x;
-            // }
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Будь еще продуктивней</title>
+    <script src="../media/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/brain/0.6.3/brain.min.js"></script>
+    <script>
+        // const config = {
+        //     iterations: 20000,
+        //     hiddenLayers: [20], // array of ints for the sizes of the hidden layers in the network
+        //     activation: 'sigmoid', // supported activation types: ['sigmoid', 'relu', 'leaky-relu', 'tanh'],
+        //     // leakyReluAlpha: 0.01, // supported for activation type 'leaky-relu'
+        // };
+        // const net = new brain.NeuralNetwork(config);
 
-            // // сокращает массив чисел [10, 5] => [2, 1]
-            // function reduction(data) {
-            //     let reduced = []
-            //     Object.keys(data).forEach(item => {
-            //         reduced[item] = data[item] / NODs[item];
-            //     });
-            //     return reduced;
-            // }
+        // // наибольшй общий делитель
+        // function NOD (arr) {
+        //     let x = arguments[0];
+        //     for (i = 1; i < arguments.length; i++) {
+        //         let y = arguments[i];
+        //         while (x && y) {
+        //             x > y ? x %= y : y %= x;
+        //         }
+        //         x += y;
+        //     }
+        //     return x;
+        // }
 
-            // // оригинальные данные с полными значениями
-            // let originData = {
-            //     k    : [6000, 6000, 6000, 3000, 3000, 3000, 8000, 8000, 8000, 1000,   3000, 3000, 3000, 1500, 1500, 1500, 4000, 4000, 4000, 1000,   3000, 2002, ],
-            //     w    : [7200, 7200, 7200, 7200, 7200, 7200, 7200, 7200, 7200, 7200,   3600, 3600, 3600, 3600, 3600, 3600, 3600, 3600, 3600, 3600,   3000, 2465, ],
-            //     f    : [1   , 420 , 240 , 1   , 420 , 240 , 1   , 420 , 240 , 1   ,   1   , 420 , 240 , 1   , 420 , 240 , 1   , 420 , 240 , 1   ,   500 , 1   , ],
-            //     cash : [3600, 3500, 3550, 3400, 3300, 3350, 3700, 3600, 3650, 1800,   1800, 1700, 1750, 1700, 1600, 1650, 1900, 1800, 1850, 900 ,   1500, 1176, ]
-            // };
+        // // сокращает массив чисел [10, 5] => [2, 1]
+        // function reduction(data) {
+        //     let reduced = []
+        //     Object.keys(data).forEach(item => {
+        //         reduced[item] = data[item] / NODs[item];
+        //     });
+        //     return reduced;
+        // }
 
-            // // объект с наибольшими общими делителями для всех ключей
-            // let NODs = {};
-            
-            // // перебираем начальные данные
-            // Object.keys(originData).forEach(item => {
-            //     let nod = NOD(...originData[item]); // находим для типа данных НОД
-            //     NODs[item] = nod; // сохраняем его
-            //     originData[item] = originData[item].map(val => val/nod); // сокращаем начальные данные
-            // });
+        // // оригинальные данные с полными значениями
+        // let originData = {
+        //     k    : [6000, 6000, 6000, 3000, 3000, 3000, 8000, 8000, 8000, 1000,   3000, 3000, 3000, 1500, 1500, 1500, 4000, 4000, 4000, 1000,   3000, 2002, ],
+        //     w    : [7200, 7200, 7200, 7200, 7200, 7200, 7200, 7200, 7200, 7200,   3600, 3600, 3600, 3600, 3600, 3600, 3600, 3600, 3600, 3600,   3000, 2465, ],
+        //     f    : [1   , 420 , 240 , 1   , 420 , 240 , 1   , 420 , 240 , 1   ,   1   , 420 , 240 , 1   , 420 , 240 , 1   , 420 , 240 , 1   ,   500 , 1   , ],
+        //     cash : [3600, 3500, 3550, 3400, 3300, 3350, 3700, 3600, 3650, 1800,   1800, 1700, 1750, 1700, 1600, 1650, 1900, 1800, 1850, 900 ,   1500, 1176, ]
+        // };
 
-            // // получаем данные для тренировки
-            // let trainData = [];
-            // // перебираем все данные
-            // for (let i = 0; i < originData['w'].length; i++) {
-            //     // записываем данные для тренировки как 1 / value
-            //     trainData.push({
-            //         input: [
-            //             1 / originData['k'][i], // key count 
-            //             1 / originData['w'][i], 
-            //             originData['f'][i] == 0 
-            //                 ? 0
-            //                 : (1 / originData['f'][i])
-            //         ],
-            //         output: [1 / originData['cash'][i]]
-            //     })
-            // }
+        // // объект с наибольшими общими делителями для всех ключей
+        // let NODs = {};
 
-            // net.train(trainData, 
-            // {
-            //     log: true,
-            //     iterations: 50000,
-            //     logPeriod: 1000,
-            //     errorThresh: 0.0000000000000001,
-            //     learningRate: 0.6
-            // }
-            // );
+        // // перебираем начальные данные
+        // Object.keys(originData).forEach(item => {
+        //     let nod = NOD(...originData[item]); // находим для типа данных НОД
+        //     NODs[item] = nod; // сохраняем его
+        //     originData[item] = originData[item].map(val => val/nod); // сокращаем начальные данные
+        // });
 
-            // let inputData = {k: 6000, w: 7200, f: 420};
-            // let reduced = Object.values(reduction(inputData));
-           
-            // reduced = reduced.map(item => 1/item);
+        // // получаем данные для тренировки
+        // let trainData = [];
+        // // перебираем все данные
+        // for (let i = 0; i < originData['w'].length; i++) {
+        //     // записываем данные для тренировки как 1 / value
+        //     trainData.push({
+        //         input: [
+        //             1 / originData['k'][i], // key count 
+        //             1 / originData['w'][i], 
+        //             originData['f'][i] == 0 
+        //                 ? 0
+        //                 : (1 / originData['f'][i])
+        //         ],
+        //         output: [1 / originData['cash'][i]]
+        //     })
+        // }
 
-            // const output = net.run(reduced);
+        // net.train(trainData, 
+        // {
+        //     log: true,
+        //     iterations: 50000,
+        //     logPeriod: 1000,
+        //     errorThresh: 0.0000000000000001,
+        //     learningRate: 0.6
+        // }
+        // );
 
-            // console.log(trainData[0]);
-            // console.log(reduced);
-            // console.log(output);
+        // let inputData = {k: 6000, w: 7200, f: 420};
+        // let reduced = Object.values(reduction(inputData));
 
-            // console.log('originData: ', originData);
-            // console.log('trainData: ', trainData);
-            // console.log('input data: ', inputData);
-            // console.log('reduced: ', reduction(inputData));
-            // console.log('1 / reduced: ',reduced);
-            // console.log('output: ', output);
-            // console.log('NODs: ', NODs);
-            // console.log('Cash', 1 / output * NODs['cash']);
+        // reduced = reduced.map(item => 1/item);
 
-            // net.train([{
-            //     input: [1 / 5000, 1 / 3600, 0],
-            //     output: [1 / 2400]
-            // },
-            // {
-            //     input: [1 / 5000, 1 / 3600, 1 / 240],
-            //     output: [1 / 1800]
-            // },
-            // {
-            //     input: [1 / 3000, 1 / 3600, 1 / 120],
-            //     output: [1 / 1800]
-            // },
-            // {
-            //     input: [1 / 6000, 1 / 7200, 1 / 120],
-            //     output: [1 / 3600]
-            // },
-            // ]);
+        // const output = net.run(reduced);
 
+        // console.log(trainData[0]);
+        // console.log(reduced);
+        // console.log(output);
 
-            
-        </script>
+        // console.log('originData: ', originData);
+        // console.log('trainData: ', trainData);
+        // console.log('input data: ', inputData);
+        // console.log('reduced: ', reduction(inputData));
+        // console.log('1 / reduced: ',reduced);
+        // console.log('output: ', output);
+        // console.log('NODs: ', NODs);
+        // console.log('Cash', 1 / output * NODs['cash']);
 
-        <style>
-            body, html{
-                padding: 0 100px;
-                position: relative;
-            }
-            ol{
-                list-style: none;
-                padding: 10px;
-            }
-            button {
-                background: rgb(74, 74, 74);
-                border: none;
-                padding: 7px;
-                margin: 5px;
-                border-radius: 5px;
-            }
-            button:hover {
-                transform: scale(1.02, 1.02);
-            }
-            #filesListContainer ul{
-                display: flex;
-                justify-content: space-evenly ;
-            }
-                
-            #tabs{
-                width: 100%;
-                height: max-content;
-                margin-bottom: 10px;
-                position: relative;
-            }
-            #tabs span, #tabs div {
-                padding: 7px;
-                border-radius: 0 0 5px 5px;
-                background: rgb(74, 74, 74);
-                border: none;
-                transition: all .05s ease-in-out;
-                cursor: pointer;
-            }
-            #tabs span:hover,  #tabs div:hover {
-                padding: 8px;
-                padding-top: 7px;
-                background: rgb(76, 76, 76);
-            }
-            #tabs #settings{
-                position: absolute;
-                top: -7px;
-                right: 0;
+        // net.train([{
+        //     input: [1 / 5000, 1 / 3600, 0],
+        //     output: [1 / 2400]
+        // },
+        // {
+        //     input: [1 / 5000, 1 / 3600, 1 / 240],
+        //     output: [1 / 1800]
+        // },
+        // {
+        //     input: [1 / 3000, 1 / 3600, 1 / 120],
+        //     output: [1 / 1800]
+        // },
+        // {
+        //     input: [1 / 6000, 1 / 7200, 1 / 120],
+        //     output: [1 / 3600]
+        // },
+        // ]);
+    </script>
+
+    <style>
+        body,
+        html {
+            padding: 0 100px;
+            oveflow-x: hidden;
+        }
+
+        @media screen and (max-width: 1300px) {
+
+            body,
+            html {
+                padding: 0 15px;
             }
 
-            .chart-wrapper {
-                width: 100%;
-                display: flex;
-                justify-content: center;
+            .info {
+                padding: 0 20px !important;
             }
+        }
+
+        ol {
+            list-style: none;
+            padding: 10px;
+        }
+
+        button {
+            background: rgb(74, 74, 74);
+            border: none;
+            padding: 7px;
+            margin: 5px;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            transform: scale(1.02, 1.02);
+        }
+
+        #filesListContainer ul {
+            display: flex;
+            justify-content: space-evenly;
+        }
+
+        #tabs {
+            width: 100%;
+            height: max-content;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        #tabs span {
+            padding: 7px;
+            border-radius: 0 0 5px 5px;
+            background: rgb(74, 74, 74);
+            border: none;
+            transition: all .05s ease-in-out;
+            cursor: pointer;
+        }
+
+        #tabs span.active {
+            background: rgb(90, 90, 90);
+            padding-top: 7px;
+            padding: 8px;
+        }
+
+        #tabs span:hover {
+            padding: 8px;
+            padding-top: 7px;
+            background: rgb(78, 78, 78);
+        }
+
+        #tabs #settings {
+            position: absolute;
+            top: -7px;
+            right: 0;
+        }
 
 
-            #settingsWindow{
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                min-height: 100%;
-                background: #242424;
-                color: white;
-                display: flex;
-                justify-content: center;
-            }
-            #settingsWindow.settings-active .settingsWindow-wrapper{
-                opacity: 1;
-                z-index: 1000;
-                pointer-events: all;
-            }
+        .info {
+            width: 100%;
+            padding: 0 130px;
+            margin: 45px 0;
+            position: relative;
+            box-sizing: border-box;
+        }
 
-            #settingsWindow .settingsWindow-wrapper{
-                width: 100%;
-                margin: 0 100px;
-                opacity: 0;
-                transition: all .5s ease-in-out; 
-                pointer-events: none;
-            }
-            #settingsWindow .settingsWindow-wrapper * {
-                width: 100%;
-            }
-            #settingsWindow .settingsWindow-wrapper h1 {
-                display: flex;
-                justify-content: center;
-            }
-            #settingsWindow .settingsWindow-wrapper input {
-                width: 150px;
-            }
-        </style>
-    </head>
-    <body>
-        <h1>Статистика продуктивности</h1>
+        .info-wrapper {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
 
-        <div id="settingsWindow">
-            <div class="settingsWindow-wrapper">
-                <h1>Настройки productivity-trecker</h1>
+        .info-text {
+            font-size: 1.2em;
+        }
 
-                <p>
-                    <span>Сколько вы берете за час своей работы?</span>
-                    <input type="number" id="hSalary" data-obj="cWork">
-                </p>
+        .info-text #info-work-time {
+            color: #24AEF3;
+        }
 
-                <p>
-                    <span>Очистить все данные всех файлов</span>
-                    <input type="radio" id="clearFilesData" data-obj="clearFilesData">
-                </p>
+        .info-text #info-key-count {
+            color: #22c76c;
+        }
 
-                <button id="settingsSave">Сохранить</button>
-            </div>
+        .info-text #info-free-time {
+            color: #F0652A;
+        }
+
+        .info-text #info-language {
+            color: #b522ab;
+        }
+
+        .info-text #info-salary {
+            color: #e6e861;
+        }
+
+        #settingsWindow {
+            position: fixed;
+            opacity: 0;
+            transition: all .5s ease-in-out;
+            top: 0;
+            left: 0;
+            width: 100%;
+            min-height: 100%;
+            background: #242424;
+            color: white;
+            display: flex;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        #settingsWindow.settings-active {
+            opacity: 1;
+            z-index: 1000;
+            pointer-events: all;
+        }
+
+        #settingsWindow .settingsWindow-wrapper {
+            width: 100%;
+            margin: 0 100px;
+            margin-top: 20px;
+        }
+
+        #settingsWindow .settingsWindow-wrapper * {
+            width: 100%;
+            font-size: 1.1em
+        }
+
+        #settingsWindow .settingsWindow-wrapper h1 {
+            display: flex;
+            justify-content: center;
+            font-size: 1.45em
+        }
+
+        #settingsWindow .settingsWindow-wrapper #hSalary {
+            width: 120px !important;
+            background: #4a4a4a;
+            border-radius: 5px;
+            color: white;
+            border: none;
+            outline: none;
+            padding: 5px;
+        }
+
+        #settingsWindow .settingsWindow-wrapper input {
+            border: none;
+            outline: none;
+        }
+
+        .settingTitle {
+            font-size: 1.23em;
+            font-weight: bold;
+        }
+
+        #settingsWindow #settingsClose {
+            position: absolute;
+            right: 0;
+            transform: rotate(45deg);
+            z-index: 1001;
+        }
+
+        #settingsWindow .settingsWindow-wrapper input[type="radio"] {
+            width: 50px;
+            margin-left: 25px;
+        }
+
+
+
+        /* //////////////////////////////////////////////////////////////////////////// */
+
+        .timeIncrease-wrapper {
+            position: absolute;
+            right: 0;
+            height: 100%;
+            width: max-content;
+        }
+        .timeIncrease {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .arcs{
+            width: max-content;
+            height: max-content;
+            position: relative;
+            display: flex;
+            justify-content: start;
+        }
+        .contIncrease-wrapper{
+            position: absolute;
+            width: 140px;
+            height: max-content;
+            overflow: hidden;
+        }
+        .cont, .contIncrease {
+            position: relative;
+            width: 110px;
+            height: 55px;
+            border-radius: 120px 120px 0 0;
+            border-top: 15px solid #707070;
+            border-left: 15px solid #707070;
+            border-right: 15px solid #707070;
+        }
+        .contIncrease {
+            --progress-color: #106b08;
+            border-top: 15px solid var(--progress-color);
+            border-left: 15px solid var(--progress-color);
+            border-right: 15px solid var(--progress-color);
+        }
+
+        .increaseText {
+            margin: 5px 0;
+            position: absolute;
+            width: max-content;
+            height: max-content;
+            bottom: -10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Статистика продуктивности</h1>
+
+    <div id="settingsWindow">
+        <div class="settingsWindow-wrapper">
+            <h1>Настройки productivity-trecker</h1>
+
+            <p>
+                <span>Сколько вы берете за час своей работы?</span>
+                <input type="number" id="hSalary" data-obj="cWork">
+            </p>
+
+            <p>
+                <span>Очистить все данные всех файлов</span>
+                <input type="radio" id="clearFilesData" data-obj="clearFilesData">
+            </p>
+
+            <button id="settingsSave">Сохранить</button>
         </div>
+    </div>
 
-        <div class="info">
-            <h2>Общая статистика за месяц</h2>
+    <div class="info">
+        <h2>Общая статистика за месяц</h2>
+        <div class="info-wrapper">
             <div class="info-text">
                 Вы работали <span id="info-work-time"></span>. <br>
                 Сделали <span id="info-key-count"></span> нажатий. <br>
                 Отдыхали <span id="info-free-time"></span>. <br>
                 Ваш любимый язык в этом месяце - <span id="info-language"></span>.
             </div>
-        </div>
-
-        <h2>${currentFile}</h2>
-
-        <hr>
-        <h3>Выберите график: </h3>
-        <div id="tabs">
-            <span id="time">Время</span>
-            <span id="key">Кол-во клавиш</span>
-            <span id="cash">Заработок</span>
-            <span id="settings">Настройки</span>
-        </div>
-        <div class="chart-wrapper">
-            <div class="chart-container" style="position: relative; height:40vh; width:80vw"></div>
-                <canvas id="key-chart"></canvas>
+            <div class="timeIncrease-wrapper">
+                <div class="timeIncrease">
+                    <div class="arcs">
+                        <div class="cont"></div>
+                        <div class="contIncrease-wrapper">
+                            <div class="contIncrease"></div>
+                        </div>
+                    </div>
+                    <div class="increaseText">вы работали на: <span>150% больше</span></div>
+                </div>
             </div>
         </div>
+    </div>
 
-        <p>
-            <h2>Выберите файл: </h2>
-            <div id="filesListContainer"></div>
-        </p>
-        <script>
-            let filesData = {
-                "machicoro.com":{
-                    "server.php":{
-                        "12/25/2020":{
-                            "workTime":45593,
-                            "freeTime":10,
-                            "date":0,
-                            "keyCount":0,
-                            "language":"php",
-                            "timestamp":"160889979065"
-                        },
-                        "12/28/2020":{
-                            "workTime": 860,
-                            "freeTime": 0,
-                            "date":0,
-                            "keyCount":0,
-                            "language":"php",
-                            "timestamp":"160889979065"
-                        },
-                        "12/29/2020":{
-                            "workTime": 0,
-                            "freeTime": 0,
-                            "date":0,
-                            "keyCount":0,
-                            "language":"php",
-                            "timestamp":"160889979065"
-                        },
-                        "12/30/2020":{
-                            "workTime": 6509,
-                            "freeTime": 0,
-                            "date":0,
-                            "keyCount":0,
-                            "language":"php",
-                            "timestamp":"160889979065"
-                        },
-                        "1/1/2021":{
-                            "workTime": 1240,
-                            "freeTime":0,
-                            "date":0,
-                            "keyCount":0,
-                            "language":"php",
-                            "timestamp":"160889973123"
-                        },
-                        "1/2/2021":{
-                            "workTime": 0,
-                            "freeTime":2340,
-                            "date":0,
-                            "keyCount":0,
-                            "language":"php",
-                            "timestamp":"1608899734358"
-                        },
-                        "1/5/2021":{
-                            "workTime":5543,
-                            "freeTime":0,
-                            "date":0,
-                            "keyCount":0,
-                            "language":"php",
-                            "timestamp":"1608899733094"
-                        }
+    <h2 id="currentFile" align="center">Index.html</h2>
+
+    <hr>
+    <h3>Выберите график: </h3>
+    <div id="tabs">
+        <span class="active" id="time">Время</span>
+        <span id="key">Кол-во клавиш</span>
+        <span id="cash">Заработок</span>
+        <span id="settings">Настройки</span>
+    </div>
+
+    <canvas id="key-chart"></canvas>
+
+    <p>
+        <h2>Выберите файл: </h2>
+        <div id="filesListContainer"></div>
+    </p>
+    <script>
+        let filesData = {
+            "machicoro.com": {
+                "server.php": {
+                    "12/25/2020": {
+                        "workTime": 45593,
+                        "freeTime": 10,
+                        "date": 0,
+                        "keyCount": 0,
+                        "language": "php",
+                        "timestamp": "160889979065"
                     },
-                    "machicorOnline.html":{
-                        "12/25/2020":{
-                            "workTime":43,
-                            "freeTime":0,
-                            "date":0,
-                            "keyCount":0,
-                            "language":"html",
-                            "timestamp":1608899736179
-                        },
-                        "12/26/2020":{
-                            "workTime": 0,
-                            "freeTime":0,
-                            "date":0,
-                            "keyCount":0,
-                            "language":"html",
-                            "timestamp":1608899736179
-                        },
-                        "12/27/2020":{
-                            "workTime": 1200,
-                            "freeTime":0,
-                            "date":0,
-                            "keyCount":0,
-                            "language":"html",
-                            "timestamp":1608899736179
-                        }
+                    "12/28/2020": {
+                        "workTime": 860,
+                        "freeTime": 0,
+                        "date": 0,
+                        "keyCount": 0,
+                        "language": "php",
+                        "timestamp": "160889979065"
+                    },
+                    "12/29/2020": {
+                        "workTime": 0,
+                        "freeTime": 0,
+                        "date": 0,
+                        "keyCount": 0,
+                        "language": "php",
+                        "timestamp": "160889979065"
+                    },
+                    "12/30/2020": {
+                        "workTime": 6509,
+                        "freeTime": 0,
+                        "date": 0,
+                        "keyCount": 0,
+                        "language": "php",
+                        "timestamp": "160889979065"
+                    },
+                    "1/1/2021": {
+                        "workTime": 1240,
+                        "freeTime": 0,
+                        "date": 0,
+                        "keyCount": 0,
+                        "language": "php",
+                        "timestamp": "160889973123"
+                    },
+                    "1/2/2021": {
+                        "workTime": 0,
+                        "freeTime": 2340,
+                        "date": 0,
+                        "keyCount": 0,
+                        "language": "php",
+                        "timestamp": "1608899734358"
+                    },
+                    "1/5/2021": {
+                        "workTime": 5543,
+                        "freeTime": 0,
+                        "date": 0,
+                        "keyCount": 0,
+                        "language": "php",
+                        "timestamp": "1608899733094"
                     }
                 },
-                "tableApp":{
-                    "table.jsx":{
-                        "12/25/2020":{
-                            "workTime":4593,
-                            "freeTime":10,
-                            "date":0,
-                            "keyCount":0,
-                            "language":"jsx",
-                            "timestamp":"160889979065"
-                        },
-                        "12/26/2020":{
-                            "workTime":4490,
-                            "freeTime":100,
-                            "date":0,
-                            "keyCount":0,
-                            "language":"jsx",
-                            "timestamp":"160889979065"
-                        },
-                        "12/27/2020":{
-                            "workTime":4593,
-                            "freeTime": 54,
-                            "date":0,
-                            "keyCount":0,
-                            "language":"jsx",
-                            "timestamp":"160889979065"
-                        },
-                        "12/28/2020":{
-                            "workTime": 860,
-                            "freeTime": 0,
-                            "date":0,
-                            "keyCount":0,
-                            "language":"jsx",
-                            "timestamp":"160889979065"
-                        },
-                        "12/29/2020":{
-                            "workTime": 0,
-                            "freeTime": 0,
-                            "date":0,
-                            "keyCount":0,
-                            "language":"jsx",
-                            "timestamp":"160889979065"
-                        },
-                        "12/30/2020":{
-                            "workTime": 6509,
-                            "freeTime": 0,
-                            "date":0,
-                            "keyCount":0,
-                            "language":"jsx",
-                            "timestamp":"160889979065"
-                        },
-                        "12/31/2020":{
-                            "workTime": 1240,
-                            "freeTime":0,
-                            "date":0,
-                            "keyCount":0,
-                            "language":"jsx",
-                            "timestamp":"160889973123"
-                        },
-                        "01/01/2021":{
-                            "workTime": 0,
-                            "freeTime":2340,
-                            "date":0,
-                            "keyCount":0,
-                            "language":"jsx",
-                            "timestamp":"1608899734358"
-                        },
-                        "02/01/2021":{
-                            "workTime":5543,
-                            "freeTime":0,
-                            "date":0,
-                            "keyCount":0,
-                            "language":"jsx",
-                            "timestamp":"1608899733094"
-                        }
+                "machicorOnline.html": {
+                    "12/25/2020": {
+                        "workTime": 43,
+                        "freeTime": 0,
+                        "date": 0,
+                        "keyCount": 0,
+                        "language": "html",
+                        "timestamp": 1608899736179
                     },
-                    "index.jsx":{
-                        "12/25/2020":{
-                            "workTime":43,
-                            "freeTime":0,
-                            "date":0,
-                            "keyCount":0,
-                            "language":"html",
-                            "timestamp":1608899736179
-                        },
-                        "12/26/2020":{
-                            "workTime": 0,
-                            "freeTime":0,
-                            "date":0,
-                            "keyCount":0,
-                            "language":"html",
-                            "timestamp":1608899736179
-                        },
-                        "12/27/2020":{
-                            "workTime": 1200,
-                            "freeTime":0,
-                            "date":0,
-                            "keyCount":0,
-                            "language":"html",
-                            "timestamp":1608899736179
-                        }
+                    "12/26/2020": {
+                        "workTime": 0,
+                        "freeTime": 0,
+                        "date": 0,
+                        "keyCount": 0,
+                        "language": "html",
+                        "timestamp": 1608899736179
+                    },
+                    "12/27/2020": {
+                        "workTime": 1200,
+                        "freeTime": 0,
+                        "date": 0,
+                        "keyCount": 0,
+                        "language": "html",
+                        "timestamp": 1608899736179
                     }
                 }
+            },
+            "tableApp": {
+                "table.jsx": {
+                    "12/25/2020": {
+                        "workTime": 4593,
+                        "freeTime": 10,
+                        "date": 0,
+                        "keyCount": 0,
+                        "language": "jsx",
+                        "timestamp": "160889979065"
+                    },
+                    "12/26/2020": {
+                        "workTime": 4490,
+                        "freeTime": 100,
+                        "date": 0,
+                        "keyCount": 0,
+                        "language": "jsx",
+                        "timestamp": "160889979065"
+                    },
+                    "12/27/2020": {
+                        "workTime": 4593,
+                        "freeTime": 54,
+                        "date": 0,
+                        "keyCount": 0,
+                        "language": "jsx",
+                        "timestamp": "160889979065"
+                    },
+                    "12/28/2020": {
+                        "workTime": 860,
+                        "freeTime": 0,
+                        "date": 0,
+                        "keyCount": 0,
+                        "language": "jsx",
+                        "timestamp": "160889979065"
+                    },
+                    "12/29/2020": {
+                        "workTime": 0,
+                        "freeTime": 0,
+                        "date": 0,
+                        "keyCount": 0,
+                        "language": "jsx",
+                        "timestamp": "160889979065"
+                    },
+                    "12/30/2020": {
+                        "workTime": 6509,
+                        "freeTime": 0,
+                        "date": 0,
+                        "keyCount": 0,
+                        "language": "jsx",
+                        "timestamp": "160889979065"
+                    },
+                    "12/31/2020": {
+                        "workTime": 1240,
+                        "freeTime": 0,
+                        "date": 0,
+                        "keyCount": 0,
+                        "language": "jsx",
+                        "timestamp": "160889973123"
+                    },
+                    "01/01/2021": {
+                        "workTime": 0,
+                        "freeTime": 2340,
+                        "date": 0,
+                        "keyCount": 0,
+                        "language": "jsx",
+                        "timestamp": "1608899734358"
+                    },
+                    "02/01/2021": {
+                        "workTime": 5543,
+                        "freeTime": 0,
+                        "date": 0,
+                        "keyCount": 0,
+                        "language": "jsx",
+                        "timestamp": "1608899733094"
+                    }
+                },
+                "index.jsx": {
+                    "12/25/2020": {
+                        "workTime": 43,
+                        "freeTime": 0,
+                        "date": 0,
+                        "keyCount": 0,
+                        "language": "html",
+                        "timestamp": 1608899736179
+                    },
+                    "12/26/2020": {
+                        "workTime": 0,
+                        "freeTime": 0,
+                        "date": 0,
+                        "keyCount": 0,
+                        "language": "html",
+                        "timestamp": 1608899736179
+                    },
+                    "12/27/2020": {
+                        "workTime": 1200,
+                        "freeTime": 0,
+                        "date": 0,
+                        "keyCount": 0,
+                        "language": "html",
+                        "timestamp": 1608899736179
+                    }
+                }
+            }
+        };
+
+        let viewData = {}; // data for chart
+        let labelsData = []; // data for labels of chart
+        // coefficients, data for get cash value
+        let c_work = 2.11,
+            c_key = 5,
+            c_free = 4.8;
+
+        getFileData("machicoro.com", "server.php");
+
+        function getCurrentDate(date = new Date()) {
+            let options = {
+                year: "numeric",
+                month: "numeric",
+                day: "numeric",
+                timezone: "UTC"
             };
 
-            let viewData = {}; // data for chart
-            let labelsData = []; // data for labels of chart
-             // coefficients, data for get cash value
-             let c_work = 2.11,
-                 c_key  = 5,
-                 c_free = 4.8;
+            return date.toLocaleDateString("en", options);
+        }
 
-            getFileData("machicoro.com", "server.php");
 
-            function getCurrentDate (date = new Date()) {
-                let options = {
-                    year: "numeric",
-                    month: "numeric",
-                    day: "numeric",
-                    timezone: "UTC"
-                };
 
-                return date.toLocaleDateString("en", options);
+        function getFileData(project, filename) {
+            labelsData = [];
+            viewData = {
+                workTime: [],
+                freeTime: [],
+                totalTime: [],
+                keyCount: [],
+                cash: []
+            };
+
+            // pull chart data
+            for (let day = 0; day < 30; day++) {
+                // get current date as string
+                let date_str = new Date(getCurrentDate());
+                // get dates for month as string
+                let date = getCurrentDate(new Date(date_str.setDate(date_str.getDate() - day)));
+
+                let currentFile = filesData[project][filename][date];
+
+                // data is not defined - set empty data
+                if (!currentFile) {
+                    viewData['workTime'].push(0);
+                    viewData['freeTime'].push(0);
+                    viewData['totalTime'].push(0);
+                    viewData['keyCount'].push(0);
+                    viewData['cash'].push(0);
+                } else {
+                    // work data
+                    let work_time = currentFile.workTime,
+                        free_time = currentFile.freeTime,
+                        total_time = work_time + free_time,
+                        key_count = currentFile.keyCount,
+                        cash = 0;
+                    console.log(c_work);
+                    // for a more accurate result
+                    if (work_time > 360) {
+                        cash = (work_time / c_work) + ((key_count * 100 * c_key) / work_time) - (free_time / c_free);
+                    } else {
+                        cash = 0;
+                    }
+
+                    viewData['workTime'].push(work_time);
+                    viewData['freeTime'].push(free_time);
+                    viewData['totalTime'].push(total_time);
+                    viewData['keyCount'].push(key_count);
+                    viewData['cash'].push(cash);
+                }
+
+
+
+                // add date to labels
+                labelsData.push(date);
             }
-            
-           
+        }
 
-            function getFileData (project, filename) {
-					labelsData = [];
-					viewData = {
-						workTime: [],
-						freeTime: [],
-						totalTime: [],
-						keyCount: [],
-						cash: []
-					};
-	
-					// pull chart data
-					for (let day = 0; day < 30; day++) {
-						// get current date as string
-						let date_str = new Date(getCurrentDate());
-						// get dates for month as string
-						let date = getCurrentDate(new Date(date_str.setDate(date_str.getDate() - day)));
-	
-						let currentFile = filesData[project][filename][date];
-	
-						// data is not defined - set empty data
-						if (!currentFile) {
-							viewData['workTime'].push(0);
-							viewData['freeTime'].push(0);
-							viewData['totalTime'].push(0);
-							viewData['keyCount'].push(0);
-							viewData['cash'].push(0);
-						} else {
-							// work data
-							let work_time  = currentFile.workTime,
-								free_time  = currentFile.freeTime,
-								total_time = work_time + free_time,
-								key_count  = currentFile.keyCount,
-								cash       = 0;
-                            console.log(c_work);
-							// for a more accurate result
-							if (work_time > 360) {
-								cash = ( work_time / c_work ) + ( (key_count * 100 * c_key) / work_time ) - ( free_time / c_free );
-							} else {
-								cash = 0;
-							}
-
-							viewData['workTime'].push(work_time);
-							viewData['freeTime'].push(free_time);
-							viewData['totalTime'].push(total_time);
-							viewData['keyCount'].push(key_count);
-                            viewData['cash'].push(cash);
-                        }
-                        
-                       
-
-						// add date to labels
-						labelsData.push(date);
-					}
-				}
-
-            let ctx = document.getElementById('key-chart').getContext('2d');
-            // crerate chart
-            let statistics = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labelsData, // date
-                    datasets: [
-                        {
-                            label: 'Work time',
-                            backgroundColor: 'rgb(255, 99, 132)',
-                            borderColor: 'rgb(255, 99, 132)',
-                            fill: false,
-                            data: viewData['workTime']
-                        },
-                        {
-                            label: 'Free time',
-                            backgroundColor: 'rgb(0, 0, 0)',
-                            borderColor: 'rgb(0, 0, 0)',
-                            fill: false,
-                            data: viewData['freeTime']
-                        },
-                        {
-                            label: 'Total time',
-                            fill: true,
-                            data: viewData['totalTime']
-                        },
-                    ]
+        let ctx = document.getElementById('key-chart').getContext('2d');
+        // crerate chart
+        let statistics = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labelsData, // date
+                datasets: [{
+                        label: 'Work time',
+                        backgroundColor: 'rgb(255, 99, 132)',
+                        borderColor: 'rgb(255, 99, 132)',
+                        fill: false,
+                        data: viewData['workTime']
+                    },
+                    {
+                        label: 'Free time',
+                        backgroundColor: 'rgb(0, 0, 0)',
+                        borderColor: 'rgb(0, 0, 0)',
+                        fill: false,
+                        data: viewData['freeTime']
+                    },
+                    {
+                        label: 'Total time',
+                        fill: true,
+                        data: viewData['totalTime']
+                    },
+                ]
+            },
+            options: {
+                aspectRatio: 2.4,
+                hover: {
+                    // Overrides the global setting
+                    mode: 'index'
                 },
-                options: {
-                    aspectRatio: 2.4,
-                    hover: {
-                        // Overrides the global setting
-                        mode: 'index'
-                    },
-                    legend: {
-                        display: true
-                    },
-                    scales: {
-                        xAxes: [ {
-                            type: "time",
-                            time: {
-                                unit: 'month'
-                            },
+                legend: {
+                    display: true
+                },
+                scales: {
+                    xAxes: [{
+                        type: "time",
+                        time: {
+                            unit: 'month'
+                        },
+                        display: true,
+                        scaleLabel: {
                             display: true,
-                            scaleLabel: {
-                                display: true,
-                                labelString: 'Days (1 - 30)'
-                            }
-                        } ],
-                        yAxes: [ {
+                            labelString: 'Days (1 - 30)'
+                        }
+                    }],
+                    yAxes: [{
+                        display: true,
+                        scaleLabel: {
                             display: true,
-                            scaleLabel: {
-                                display: true,
-                                labelString: 'Work time - sec'
-                            }
-                        } ]
-                    }
+                            labelString: 'Work time - sec'
+                        }
+                    }]
                 }
-            });
+            }
+        });
 
-            let filesContainer = document.getElementById('filesListContainer');
-            // pull files for create tree list in html
-            let files = {}
-            Object.keys(filesData).forEach (project => {
-                files[project] =  Object.keys(filesData[project]).map(file => {
-                    return file;
+        let filesContainer = document.getElementById('filesListContainer');
+        // pull files for create tree list in html
+        let files = {}
+        Object.keys(filesData).forEach(project => {
+            files[project] = Object.keys(filesData[project]).map(file => {
+                return file;
+            });
+        });
+        filesContainer.appendChild(objToHtmlList(files));
+
+        function objToHtmlList(obj, projectName = "utitled") {
+            if (obj instanceof Array) {
+                let ol = document.createElement('ol');
+                for (let child in obj) {
+                    let li = document.createElement('li');
+
+                    // button for open file
+                    let btn = document.createElement("BUTTON");
+                    btn.onclick = () => {
+                        openFileData(projectName, obj[child]);
+                    }
+                    btn.appendChild(objToHtmlList(obj[child]));
+                    li.appendChild(btn);
+                    ol.appendChild(li);
+                }
+                return ol;
+            } else if (obj instanceof Object && !(obj instanceof String)) {
+                let ul = document.createElement('ul');
+                for (let child in obj) {
+                    let li = document.createElement('li');
+                    li.appendChild(document.createTextNode(child + ": "));
+                    li.appendChild(objToHtmlList(obj[child], child));
+                    ul.appendChild(li);
+                }
+                return ul;
+            } else {
+                return document.createTextNode(obj);
+            }
+        }
+
+        function openFileData(project, fileName, type = "time") {
+            getFileData(project, fileName);
+            if (type == "time") {
+                statistics.data.datasets = [{
+                        label: 'Work time',
+                        backgroundColor: 'rgb(255, 99, 132)',
+                        borderColor: 'rgb(255, 99, 132)',
+                        fill: false,
+                        data: viewData['workTime']
+                    },
+                    {
+                        label: 'Free time',
+                        backgroundColor: 'rgb(0, 0, 0)',
+                        borderColor: 'rgb(0, 0, 0)',
+                        fill: false,
+                        data: viewData['freeTime']
+                    },
+                    {
+                        label: 'Total time',
+                        fill: true,
+                        data: viewData['totalTime']
+                    },
+                ];
+            } else if (type == "key") {
+                statistics.data.datasets = [{
+                    label: 'Количество нажатых клавиш',
+                    borderColor: '#42c775',
+                    fill: false,
+                    data: viewData['keyCount']
+                }];
+            } else if (type == "cash") {
+                statistics.data.datasets = [{
+                    label: 'Ваша заработок',
+                    borderColor: '#e6e861',
+                    fill: false,
+                    data: viewData['cash']
+                }];
+            }
+
+            statistics.update();
+        }
+
+
+        // html work
+        print_tabs();
+
+        function print_tabs() {
+            let tabs = document.querySelectorAll('#tabs span');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    if (tab.id !== 'settings') {
+                        // open new chart
+                        openFileData("machicoro.com", "server.php", tab.id)
+                    } else {
+                        // open settings page
+                        openSettings();
+                    }
                 });
             });
-            filesContainer.appendChild(objToHtmlList(files));
+        }
 
-            function objToHtmlList(obj, projectName = "utitled") {
-                if (obj instanceof Array) {
-                    let ol = document.createElement('ol');
-                    for (let child in obj) {
-                        let li = document.createElement('li');
-                        
-                        // button for open file
-                        let btn = document.createElement("BUTTON");
-                        btn.onclick = () => {
-                            openFileData(projectName, obj[child]);
-                        }
-                        btn.appendChild(objToHtmlList(obj[child]));
-                        li.appendChild(btn);
-                        ol.appendChild(li);
-                    }
-                    return ol;
-                }
-                else if (obj instanceof Object && !(obj instanceof String)) {
-                    let ul = document.createElement('ul');
-                    for (let child in obj) {
-                        let li = document.createElement('li');
-                        li.appendChild(document.createTextNode(child + ": "));
-                        li.appendChild(objToHtmlList(obj[child], child));
-                        ul.appendChild(li);
-                    }
-                    return ul;
-                }
-                else {
-                    return document.createTextNode(obj);
-                }
-            }
+        print_totalStatistics();
 
-            function openFileData (project, fileName, type = "time") {
-                getFileData(project, fileName);
-                if (type == "time"){
-                    statistics.data.datasets = [
-                        {
-                            label: 'Work time',
-                            backgroundColor: 'rgb(255, 99, 132)',
-                            borderColor: 'rgb(255, 99, 132)',
-                            fill: false,
-                            data: viewData['workTime']
-                        },
-                        {
-                            label: 'Free time',
-                            backgroundColor: 'rgb(0, 0, 0)',
-                            borderColor: 'rgb(0, 0, 0)',
-                            fill: false,
-                            data: viewData['freeTime']
-                        },
-                        {
-                            label: 'Total time',
-                            fill: true,
-                            data: viewData['totalTime']
-                        },
-                    ];
-                } else if (type == "key") {
-                    statistics.data.datasets = [
-                        {
-                            label: 'Количество нажатых клавиш',
-                            borderColor: '#42c775',
-                            fill: false,
-                            data: viewData['keyCount']
-                        }
-                    ];
-                } else if (type == "cash") {
-                    statistics.data.datasets = [
-                        {
-                            label: 'Ваша заработок',
-                            borderColor: '#e6e861',
-                            fill: false,
-                            data: viewData['cash']
-                        }
-                    ];
-                }
+        function print_totalStatistics() {
+            let info_work_time = 0;
+            let info_key_count = 0;
+            let info_free_time = 0;
+            let languages = {},
+                info_language = 'Русский;)';
 
-                statistics.update();
-            }
+            for (let project of Object.values(filesData)) {
+                if (project[""]) {
+                    project[""] = undefined;
+                } else {
+                    for (let file of Object.values(project)) {
+                        for (let day of Object.values(file)) {
+                            info_work_time += day.workTime;
+                            info_key_count += day.keyCount;
+                            info_free_time += day.freeTime;
 
-
-            // html work
-            print_tabs();
-            function print_tabs() {
-                let tabs = document.querySelectorAll('#tabs span');
-                tabs.forEach(tab => {
-                    tab.addEventListener('click', () => {
-                        if (tab.id !== 'settings') {
-                            // open new chart
-                            openFileData("machicoro.com", "server.php", tab.id)
-                        } else {
-                            // open settings page
-                            openSettings();
-                        }
-                    });
-                });
-            }
-
-            print_totalStatistics();
-            function print_totalStatistics() {
-                let info_work_time = 0;
-                let info_key_count = 0;
-                let info_free_time = 0;
-                let languages = {},
-                    info_language = 'Русский;)';
-
-                for (let project of Object.values(filesData)) {
-                    if (project[""]) {
-                        project[""] = undefined;
-                    }else{
-                        for (let file of Object.values(project)) {
-                            for (let day of Object.values(file)) {
-                                info_work_time += day.workTime;
-                                info_key_count += day.keyCount;
-                                info_free_time += day.freeTime;
-    
-                                if (!languages[day.language]) {
-                                    languages[day.language] = 0;
-                                }
-                                languages[day.language] += day.workTime;
+                            if (!languages[day.language]) {
+                                languages[day.language] = 0;
                             }
+                            languages[day.language] += day.workTime;
                         }
                     }
-                    let bigest;
-                    for ( let lang in languages ) {
-                        if (!bigest) bigest = lang;
-                        else if (languages[bigest] < languages[lang])
-                            bigest = lang;
+                }
+                let bigest;
+                for (let lang in languages) {
+                    if (!bigest) bigest = lang;
+                    else if (languages[bigest] < languages[lang])
+                        bigest = lang;
+                }
+                info_language = bigest;
+
+                document.querySelector('#info-work-time').innerHTML = Math.floor(info_work_time / 60) + ' мин';
+                document.querySelector('#info-key-count').innerHTML = info_key_count;
+                document.querySelector('#info-free-time').innerHTML = Math.floor(info_free_time / 60) + ' мин';
+                document.querySelector('#info-language').innerHTML = info_language;
+            }
+        }
+
+
+        function openSettings() {
+            // open / close settings
+            document.querySelector('#settingsWindow').classList.toggle('settings-active');
+
+            let inputs = document.querySelectorAll('#settingsWindow input');
+            let settings = {};
+            // save settings on click button
+            document.querySelector('#settingsSave').onclick = () => {
+                // get value of all inputs
+                inputs.forEach(inp => {
+                    let value = inp.value
+                    console.log(value);
+                    let attr = inp.getAttribute('data-obj');
+                    if (attr === 'cWork') {
+                        settings.cWork = value ? 3600 / +value - 100 : 1200 - 100;
+                    } else if (attr === 'clearFilesData') {
+                        settings.clearFilesData = inp.checked;
+                    } else {
+                        settings[attr] = value;
                     }
-                    info_language = bigest;
-    
-                    document.querySelector('#info-work-time').innerHTML = Math.floor(info_work_time/60) + ' мин';
-                    document.querySelector('#info-key-count').innerHTML = info_key_count;
-                    document.querySelector('#info-free-time').innerHTML = Math.floor(info_free_time/60) + ' мин';
-                    document.querySelector('#info-language').innerHTML = info_language;
-                }
+
+
+                });
+                console.log(settings);
             }
+        }
+    </script>
+</body>
 
-
-            function openSettings () {
-                // open / close settings
-                document.querySelector('#settingsWindow').classList.toggle('settings-active');
-
-                let inputs = document.querySelectorAll('#settingsWindow input');
-                let settings = {};
-                // save settings on click button
-                document.querySelector('#settingsSave').onclick = () => {
-                    // get value of all inputs
-                    inputs.forEach(inp => {
-                        let value = inp.value
-                        console.log(value);
-                        let attr = inp.getAttribute('data-obj');
-                        if (attr === 'cWork') {
-                            settings.cWork = value ? 3600 / +value - 100 : 1200 - 100;
-                        } else if (attr === 'clearFilesData') {
-                            settings.clearFilesData = inp.checked;
-                        }
-
-                        else{
-                            settings[attr] = value;
-                        }
-
-                       
-                    });
-                    console.log(settings);
-                }
-            }
-        </script>
-    </body>
 </html>
