@@ -7,7 +7,8 @@
 Запустите разширение из палитры команд (Вид -> палитра команд или Ctrl + Shift + P) и введите Productivity-checker
 Расширение начнет отслеживать вашу активность, которую вы можете посмотреть, нажав на кнопку Work time в статус баре
 
-![Запуск](images/launch.jpg)
+Установить:
+https://marketplace.visualstudio.com/items?itemName=ColorKat.productivity-checker&ssr=false#review-details
 
 <!-- ## Extension Settings
 
